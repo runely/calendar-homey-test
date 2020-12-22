@@ -1,6 +1,6 @@
 ﻿# Test IcalCalendar behavior
 
-This nodejs app will let you test IcalCalendar behavior:
+This nodejs app will let you test [IcalCalendar](https://github.com/runely/calendar-homey) behavior:
 
 * Get a list of the events retrieved from your calendar(s)
 * Get the next event happening across all your calendars
