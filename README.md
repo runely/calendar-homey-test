@@ -25,7 +25,8 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
             "calendars": [
                 {
                     "name": "Default",
-                    "uri": "https://github.com/runely/calendar-homey-test/blob/master/calendars/default.ics"
+                    "uri": "https://github.com/runely/calendar-homey-test/blob/master/calendars/default.ics",
+                    "import": true
                 }
             ]
         }

@@ -1,7 +1,7 @@
 ﻿const chalk = require('chalk')
 
 module.exports.calendars = () => {
-  return require('./calendars.json').calendars;
+  return require('./calendars.json').calendars.filter(calendar => calendar.import);
 }
 
 /** @function
