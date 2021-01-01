@@ -39,7 +39,8 @@
       "object-curly-spacing": "off",
       "eol-last": "off",
       "capitalized-comments": "off",
-      "no-negated-condition": "off"
+      "no-negated-condition": "off",
+      "radix": "warn"
     }
   }
 }
