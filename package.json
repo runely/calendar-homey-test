@@ -38,7 +38,8 @@
       ],
       "object-curly-spacing": "off",
       "eol-last": "off",
-      "capitalized-comments": "off"
+      "capitalized-comments": "off",
+      "no-negated-condition": "off"
     }
   }
 }
