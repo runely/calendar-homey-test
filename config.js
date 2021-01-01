@@ -1,8 +1,8 @@
-﻿const chalk = require('chalk')
+const chalk = require('chalk');
 
 module.exports.calendars = () => {
   return require('./calendars.json').calendars.filter(calendar => calendar.import);
-}
+};
 
 /** @function
  * EventLimits for calendar events.
@@ -12,9 +12,9 @@ module.exports.calendars = () => {
 module.exports.eventLimit = () => {
   return {
     value: 2,
-    type: "months"
-  }
-}
+    type: 'months'
+  };
+};
 
 /** @function
  * Debug options for ical file / events retrieved
@@ -25,41 +25,41 @@ module.exports.debugOptions = () => {
   return {
     saveAll: false,
     saveActive: false
-  }
-}
+  };
+};
 
 /** @function
  * Log a info message to console
- * @param {string} msg - Message to be written out to console
+ * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
-module.exports.info = (msg, ...additional) => {
-  console.log(chalk.white(msg, additional))
-}
+module.exports.info = (message, ...additional) => {
+  console.log(chalk.white(message, additional));
+};
 
 /** @function
  * Log a warning message to console
- * @param {string} msg - Message to be written out to console
+ * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
-module.exports.warn = (msg, ...additional) => {
-  console.warn(chalk.yellow(msg, additional))
-}
+module.exports.warn = (message, ...additional) => {
+  console.warn(chalk.yellow(message, additional));
+};
 
 /** @function
  * Log a error message to console
- * @param {string} msg - Message to be written out to console
+ * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
-module.exports.error = (msg, ...additional) => {
-  console.error(chalk.red(msg, additional))
-}
+module.exports.error = (message, ...additional) => {
+  console.error(chalk.red(message, additional));
+};
 
 /** @function
  * Log a debug message to console
- * @param {string} msg - Message to be written out to console
+ * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
-module.exports.debug = (msg, ...additional) => {
-  console.log(chalk.cyan(msg, additional))
-}
+module.exports.debug = (message, ...additional) => {
+  console.log(chalk.cyan(message, additional));
+};
