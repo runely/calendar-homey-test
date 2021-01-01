@@ -23,7 +23,7 @@
     "calendars-and-todays-events": "node from-file.js --todaysEvents",
     "calendars-and-tomorrows-events": "node from-file.js --tomorrowsEvents",
     "test": "xo",
-    "fix": "xo && xo --fix"
+    "fix": "xo --fix"
   },
   "xo": {
     "space": 2,
