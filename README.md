@@ -1,4 +1,6 @@
-﻿# Test IcalCalendar behavior
+﻿[![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/xojs/xo)
+
+# Test IcalCalendar behavior
 
 This nodejs app will let you test [IcalCalendar](https://github.com/runely/calendar-homey) behavior:
 
