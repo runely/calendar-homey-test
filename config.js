@@ -1,19 +1,12 @@
 const chalk = require('chalk');
 
 module.exports.calendars = () => {
-  return require('./calendars.json').calendars.filter(calendar => calendar.import);
-};
-
-/** @function
- * EventLimits for calendar events.
- * value : is a number.
- * type :  is one of "days", "hours", "milliseconds", "minutes", "months", "quarters", "seconds", "weeks", "years"
- */
-module.exports.eventLimit = () => {
-  return {
-    value: 2,
-    type: 'months'
-  };
+  try {
+    return require('./calendars.json').calendars.filter(calendar => calendar.import);
+  } catch (error) {
+    this.error(error)
+    return { calendars: [] }
+  }
 };
 
 /** @function
