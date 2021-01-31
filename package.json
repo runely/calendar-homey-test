@@ -14,7 +14,7 @@
     "yargs": "16.2.0"
   },
   "devDependencies": {
-    "xo": "0.37.1"
+    "standard": "16.0.3"
   },
   "scripts": {
     "refresh": "rm -rf node_modules/ && rm package-lock.json && npm i",
@@ -22,25 +22,7 @@
     "calendars-and-next-event": "node from-file.js --nextEvent",
     "calendars-and-todays-events": "node from-file.js --todaysEvents",
     "calendars-and-tomorrows-events": "node from-file.js --tomorrowsEvents",
-    "test": "xo",
-    "fix": "xo --fix"
-  },
-  "xo": {
-    "space": 2,
-    "semicolon": true,
-    "rules": {
-      "no-unused-vars": [
-        "warn",
-        {
-          "vars": "all",
-          "args": "after-used"
-        }
-      ],
-      "object-curly-spacing": "off",
-      "eol-last": "off",
-      "capitalized-comments": "off",
-      "no-negated-condition": "off",
-      "radix": "warn"
-    }
+    "test": "standard",
+    "fix": "standard --fix"
   }
 }
