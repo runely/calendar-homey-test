@@ -17,7 +17,7 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
     ```
 1. Install dependencies
     ```bash
-    npm install
+    npm i
     ```
 1. Add your calendars
     1. Create the file `calendars.json`
@@ -28,7 +28,15 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
                 {
                     "name": "Default",
                     "uri": "https://raw.githubusercontent.com/runely/calendar-homey-test/master/calendars/default.ics",
-                    "import": true
+                    "import": true,
+                    "eventLimit": {
+                        "value": 2,
+                        "type": "months"
+                    },
+                    "debugOptions": {
+                        "saveAll": false,
+                        "saveActive": false
+                    }
                 }
             ]
         }
@@ -57,15 +65,16 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
 ## Configuration
 
 To change how far into the future you want to retrieve events:
-1. Open `config.js` and find the `eventLimit` export
+1. Open `calendars.json` and find the calendar you want to adjust
 1. Change `value` to any number and `type` to one of the predefined types
+    1. "days", "hours", "milliseconds", "minutes", "months", "quarters", "seconds", "weeks", "years"
 
 If you want to save all events retrieved/parsed through [node-ical](https://github.com/jens-maus/node-ical):
-1. Open `config.js` and find the `debugOptions` export
+1. Open `calendars.json` and find the calendar you want to adjust
 1. Set `saveAll` to `true` to save the file, otherwise set it to `false`
-1. File is saved to `tests/contents/debug/all_%calendarname%_dd.MM.yyyy.json`
+1. If set to `true`, the file will be saved to `contents/raw/<name>_<date>.json`
 
 If you want to save active events retrieved/parsed through [node-ical](https://github.com/jens-maus/node-ical):
-1. Open `config.js` and find the `debugOptions` export
+1. Open `calendars.json` and find the calendar you want to adjust
 1. Set `saveActive` to `true` to save the file, otherwise set it to `false`
-1. File is saved to `tests/contents/debug/active_%calendarname%_dd.MM.yyyy.json`
+1. If set to `true`, the file will be saved to `contents/active/<name>_<date>.json`

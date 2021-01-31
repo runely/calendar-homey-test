@@ -13,10 +13,9 @@ const getTomorrowsEvents = require('./lib/calendarHomey/get-tomorrows-events');
 const args = yargs(process.argv.slice(2)).argv;
 
 const { info, error, debug } = config; // { info, warn, error, debug }
-const debugOptions = config.debugOptions();
-const uris = config.calendars();
+const calendars = config.calendars();
 
-getEvents(uris, debugOptions.saveAll, debugOptions.saveActive)
+getEvents(calendars)
   .then(calendarsEvents => {
     let totalCalendarsEvents = 0;
     calendarsEvents.forEach(calendar => {
