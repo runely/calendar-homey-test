@@ -10,18 +10,6 @@ module.exports.calendars = () => {
 };
 
 /** @function
- * Debug options for ical file / events retrieved
- * saveAll : if false, all events retrieved/parsed through node-ical will NOT be saved. if true, all events retrieved/parsed through node-ical will be saved. (.json file)
- * saveActive : if false, active events retrieved/parsed through node-ical will NOT be saved. if true, active events retrieved/parsed through node-ical will be saved. (.json file)
- */
-module.exports.debugOptions = () => {
-  return {
-    saveAll: false,
-    saveActive: false
-  };
-};
-
-/** @function
  * Log a info message to console
  * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
