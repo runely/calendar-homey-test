@@ -9,7 +9,7 @@
   "dependencies": {
     "chalk": "4.1.0",
     "humanize-duration": "3.25.1",
-    "moment-timezone": "0.5.32",
+    "moment-timezone": "0.5.33",
     "node-ical": "0.12.8",
     "yargs": "16.2.0"
   },
