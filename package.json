@@ -10,7 +10,7 @@
     "chalk": "4.1.0",
     "humanize-duration": "3.25.1",
     "moment-timezone": "0.5.33",
-    "node-ical": "0.12.8",
+    "node-ical": "0.12.9",
     "yargs": "16.2.0"
   },
   "devDependencies": {
