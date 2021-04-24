@@ -8,7 +8,7 @@
   "license": "ISC",
   "dependencies": {
     "chalk": "4.1.0",
-    "humanize-duration": "3.25.1",
+    "humanize-duration": "3.25.2",
     "moment-timezone": "0.5.33",
     "node-ical": "0.13.0",
     "yargs": "16.2.0"
