@@ -7,7 +7,7 @@
   "author": "Rune Moskvil Lyngås <rune.moskvil.lyngaas@vtfk.no>",
   "license": "ISC",
   "dependencies": {
-    "chalk": "4.1.2",
+    "chalk": "5.0.0",
     "moment-timezone": "0.5.33",
     "node-ical": "0.14.1",
     "yargs": "17.2.1"
