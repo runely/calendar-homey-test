@@ -33,7 +33,7 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
                         "value": 2,
                         "type": "months"
                     },
-                    "debugOptions": {
+                    "options": {
                         "saveAll": false,
                         "saveActive": false
                     }
@@ -42,7 +42,7 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
         }
         ```
     1. Add your own calendars to the list
-        1. If you want to test a local ics file, swap out the uri with full path to the ics file and add `"isLocalFile": true` to `"debugOptions"`
+        1. If you want to test a local ics file, swap out the uri with full path to the ics file and add `"isLocalFile": true` to `"options"`
 
 ## Usage
 
