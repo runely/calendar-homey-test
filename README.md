@@ -36,7 +36,8 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
                     "options": {
                         "saveAll": false,
                         "saveActive": false
-                    }
+                    },
+                    "tz": "Europe/Oslo"
                 }
             ]
         }
@@ -79,3 +80,7 @@ If you want to save active events retrieved/parsed through [node-ical](https://g
 1. Open `calendars.json` and find the calendar you want to adjust
 1. Set `saveActive` to `true` to save the file, otherwise set it to `false`
 1. If set to `true`, the file will be saved to `contents/active/<name>_<date>.json`
+
+Change *timezone* per calendar:
+1. Open `calendars.json` and find the calendar you want to adjust
+1. Add or change the property `tz` and set the *timezone* you want for that calendar

@@ -1,9 +1,9 @@
+const config = require('./config')
+
 const moment = require('moment')
 const yargs = require('yargs/yargs')
 
 const scriptStart = moment().format('x')
-
-const config = require('./config')
 
 const getEvents = require('./lib/calendarHomey/get-events')
 const getNextEvent = require('./lib/calendarHomey/get-next-event')
