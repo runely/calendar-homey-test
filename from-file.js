@@ -1,22 +1,36 @@
-const config = require('./config')
+(async () => {
+  const config = require('./config')
 
-const moment = require('moment')
-const yargs = require('yargs/yargs')
+  const moment = require('moment')
+  const yargs = require('yargs/yargs')
 
-const scriptStart = moment().format('x')
+  const scriptStart = moment().format('x')
 
-const getEvents = require('./lib/calendarHomey/get-events')
-const getNextEvent = require('./lib/calendarHomey/get-next-event')
-const getTodaysEvents = require('./lib/calendarHomey/get-todays-events')
-const getTomorrowsEvents = require('./lib/calendarHomey/get-tomorrows-events')
+  const getEvents = require('./lib/calendarHomey/get-events')
+  const sortEvents = require('./lib/calendarHomey/sort-events')
+  const getNextEvent = require('./lib/calendarHomey/get-next-event')
+  const getTodaysEvents = require('./lib/calendarHomey/get-todays-events')
+  const getTomorrowsEvents = require('./lib/calendarHomey/get-tomorrows-events')
 
-const args = yargs(process.argv.slice(2)).argv
+  const args = yargs(process.argv.slice(2)).argv
 
-const { info, error, debug } = config // { info, warn, error, debug }
-const calendars = config.calendars()
+  const { info, error, debug } = config // { info, warn, error, debug }
+  const calendars = config.calendars()
 
-getEvents(calendars)
-  .then(calendarsEvents => {
+  if (!calendars || !Array.isArray(calendars) || calendars.length === 0) {
+    info('getEvents: Add at least one calendar in calendar.json')
+    process.exit(1)
+  }
+  info(`fromFile: Getting ${calendars.length} calendars\n`)
+
+  const calendarsEvents = []
+  for await (const calendar of calendars) {
+    const calendarEvents = await getEvents(calendar)
+    calendarsEvents.push(calendarEvents)
+  }
+  sortEvents(calendarsEvents)
+
+  try {
     let totalCalendarsEvents = 0
     calendarsEvents.forEach(calendar => {
       totalCalendarsEvents += calendar.events.length
@@ -49,11 +63,11 @@ getEvents(calendars)
       const scriptEnd = moment().format('x')
       debug(`\nApp ran for '${(scriptEnd - scriptStart) / 1000}' seconds`)
     }
-  })
-  .catch(error_ => {
+  } catch (error_) {
     error('ERRRRROOOOOORRRRR: ', error_)
 
     // scriptEnd
     const scriptEnd = moment().format('x')
     debug(`\tApp ran for '${(scriptEnd - scriptStart) / 1000}' seconds`)
-  })
+  }
+})()
