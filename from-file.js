@@ -23,7 +23,7 @@
   }
   info(`fromFile: Getting ${calendars.length} calendars\n`)
 
-  let timezone = undefined
+  let timezone
   const calendarsEvents = []
   for await (const calendar of calendars) {
     const calendarEvents = await getEvents(calendar)
