@@ -7,7 +7,7 @@
   const scriptStart = moment().format('x')
 
   const getEvents = require('./lib/calendarHomey/get-events')
-  const sortEvents = require('./lib/calendarHomey/sort-events')
+  const { sortCalendars } = require('./lib/calendarHomey/sort-events')
   const getNextEvent = require('./lib/calendarHomey/get-next-event')
   const getTodaysEvents = require('./lib/calendarHomey/get-todays-events')
   const getTomorrowsEvents = require('./lib/calendarHomey/get-tomorrows-events')
@@ -23,12 +23,16 @@
   }
   info(`fromFile: Getting ${calendars.length} calendars\n`)
 
+  let timezone = undefined
   const calendarsEvents = []
   for await (const calendar of calendars) {
     const calendarEvents = await getEvents(calendar)
+    if (!timezone && calendar.tz) {
+      timezone = calendar.tz
+    }
     calendarsEvents.push(calendarEvents)
   }
-  sortEvents(calendarsEvents)
+  sortCalendars(calendarsEvents)
 
   try {
     let totalCalendarsEvents = 0
@@ -42,19 +46,19 @@
 
     // get next event
     if (args.nextEvent) {
-      const nextEvents = getNextEvent(calendarsEvents)
+      const nextEvents = getNextEvent(calendarsEvents, timezone)
       info('\nNext event:', JSON.stringify(nextEvents, null, 2))
     }
 
     // get todays events
     if (args.todaysEvents) {
-      const todaysEvents = getTodaysEvents(calendarsEvents)
+      const todaysEvents = getTodaysEvents(calendarsEvents, timezone)
       info('\nTodays events:', JSON.stringify(todaysEvents, null, 2))
     }
 
     // get tomorrows events
     if (args.tomorrowsEvents) {
-      const tomorrowsEvents = getTomorrowsEvents(calendarsEvents)
+      const tomorrowsEvents = getTomorrowsEvents(calendarsEvents, timezone)
       info('\nTomorrows events:', JSON.stringify(tomorrowsEvents, null, 2))
     }
 
