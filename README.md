@@ -37,6 +37,7 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
                         "saveAll": false,
                         "saveActive": false
                     },
+                    "logProperties": [],
                     "tz": "Europe/Oslo"
                 }
             ]
@@ -84,3 +85,62 @@ If you want to save active events retrieved/parsed through [node-ical](https://g
 Change *timezone* per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
 1. Add or change the property `tz` and set the *timezone* you want for that calendar
+
+Add properties you want printed to console per event per calendar:
+1. Open `calendars.json` and find the calendar you want to adjust
+1. Add one or more of these event property names to the `logProperties` array
+    - `type`
+    - `params`
+    - `tzid`
+    - `description`
+    - `rrule`
+    - `recurrences`
+    - `recurrenceid`
+    - `exdate`
+    - `uid`
+    - `summary`
+    - `start`
+    - `datetype`
+    - `end`
+    - `class`
+    - `priority`
+    - `dtstamp`
+    - `transparency`
+    - `status`
+    - `sequence`
+    - `location`
+    - `method`
+    - `prodid`
+    - `version`
+    - `WR-CALNAME`
+    - `WR-TIMEZONE`
+    - `LIC-LOCATION`
+    - `created`
+    - `lastmodified`
+    - `organizer`
+    - `attendee`
+    - `url`
+    - `attach`
+    - `categories`
+    - `calscale`
+    - `MICROSOFT-CDO-APPT-SEQUENCE`
+    - `MICROSOFT-CDO-BUSYSTATUS`
+    - `MICROSOFT-CDO-INTENDEDSTATUS`
+    - `MICROSOFT-CDO-ALLDAYEVENT`
+    - `MICROSOFT-CDO-IMPORTANCE`
+    - `MICROSOFT-CDO-INSTTYPE`
+    - `MICROSOFT-DONOTFORWARDMEETING`
+    - `MICROSOFT-DISALLOW-COUNTER`
+    - `MICROSOFT-CDO-OWNERAPPTID`
+    - `MICROSOFT-EVENTPROPERTIESTODELETE`
+    - `MICROSOFT-ONLINEMEETINGCONFLINK`
+    - `MICROSOFT-ONLINEMEETINGINFORMATION`
+    - `MICROSOFT-SCHEDULINGSERVICEUPDATEURL`
+    - `MICROSOFT-SKYPETEAMSMEETINGURL`
+    - `MICROSOFT-SKYPETEAMSPROPERTIES`
+    - `MICROSOFT-LOCATIONS`
+    - `MS-OLK-AUTOFILLLOCATION`
+    - `MS-OLK-CONFTYPE`
+    - `APPLE-STRUCTURED-LOCATION`
+    - `APPLE-TRAVEL-ADVISORY-BEHAVIOR`
+    - `APPLE-TRAVEL-START`
