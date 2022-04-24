@@ -18,10 +18,10 @@
   },
   "scripts": {
     "refresh": "rm -rf node_modules/ && rm package-lock.json && npm i",
-    "calendars": "node from-file.js",
-    "calendars-and-next-event": "node from-file.js --nextEvent",
-    "calendars-and-todays-events": "node from-file.js --todaysEvents",
-    "calendars-and-tomorrows-events": "node from-file.js --tomorrowsEvents",
+    "calendars": "env TZ=UTC node from-file.js",
+    "calendars-and-next-event": "env TZ=UTC node from-file.js --nextEvent",
+    "calendars-and-todays-events": "env TZ=UTC node from-file.js --todaysEvents",
+    "calendars-and-tomorrows-events": "env TZ=UTC node from-file.js --tomorrowsEvents",
     "test": "standard",
     "fix": "standard --fix"
   }
