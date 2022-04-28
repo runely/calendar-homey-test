@@ -30,7 +30,13 @@
     if (!timezone && calendar.tz) {
       timezone = calendar.tz
     }
-    calendarsEvents.push(calendarEvents)
+
+    if (calendarEvents.length > 0) calendarsEvents.push(calendarEvents)
+  }
+
+  if (calendarsEvents.length === 0) {
+    error('No calendars returned... Aborting...')
+    process.exit(-1)
   }
   sortCalendars(calendarsEvents)
 
