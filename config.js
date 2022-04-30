@@ -1,8 +1,5 @@
 const chalk = require('chalk')
 
-// force node process to work in UTC timezone
-process.env.TZ = 'UTC'
-
 module.exports.calendars = () => {
   try {
     return require('./calendars.json').calendars.filter(calendar => calendar.import)
