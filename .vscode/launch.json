@@ -6,6 +6,9 @@
     "configurations": [
         {
             "type": "node",
+            "env": {
+                "TZ": "UTC"
+            },
             "request": "launch",
             "name": "Launch Program",
             "skipFiles": [
