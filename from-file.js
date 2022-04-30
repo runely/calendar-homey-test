@@ -31,7 +31,7 @@
       timezone = calendar.tz
     }
 
-    if (calendarEvents.length > 0) calendarsEvents.push(calendarEvents)
+    if (calendarEvents.name && calendarEvents.events && calendarEvents.events.length > 0) calendarsEvents.push(calendarEvents)
   }
 
   if (calendarsEvents.length === 0) {
