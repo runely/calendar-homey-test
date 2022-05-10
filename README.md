@@ -88,6 +88,10 @@ Change *timezone* per calendar:
 
 Add properties you want printed to console per event per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
+1. Add `event` to the `logProperties` array for console logging out the whole event
+
+    AND/OR
+
 1. Add one or more of these event property names to the `logProperties` array
     - `type`
     - `params`
