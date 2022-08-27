@@ -119,3 +119,4 @@ dist
 contents/*/*.ics
 contents/*/*.json
 calendars.json
+env.json
