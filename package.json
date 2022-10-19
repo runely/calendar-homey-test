@@ -9,7 +9,7 @@
   "dependencies": {
     "chalk": "4.1.2",
     "lodash.clonedeep": "4.5.0",
-    "moment-timezone": "0.5.34",
+    "moment-timezone": "0.5.35",
     "node-ical": "0.15.1",
     "yargs": "^17.4.1"
   },
