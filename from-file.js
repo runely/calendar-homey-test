@@ -31,7 +31,16 @@
       timezone = calendar.tz
     }
 
-    if (calendarEvents.name && calendarEvents.events && calendarEvents.events.length > 0) calendarsEvents.push(calendarEvents)
+    if (calendarEvents.name && calendarEvents.events && calendarEvents.events.length > 0) {
+      calendarsEvents.push(calendarEvents)
+      if (calendar.options.showMeetingUrls) {
+        calendarEvents.events.forEach(event => {
+          if (event.meetingUrl) {
+            debug(`\nMeeting URL: '${calendarEvents.name}' -- '${event.summary}' -- '${event.meetingUrl}'\n`)
+          }
+        })
+      }
+    }
   }
 
   if (calendarsEvents.length === 0) {

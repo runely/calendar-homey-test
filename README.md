@@ -35,7 +35,8 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
                     },
                     "options": {
                         "saveAll": false,
-                        "saveActive": false
+                        "saveActive": false,
+                        "showMeetingUrls": false
                     },
                     "logProperties": [],
                     "tz": "Europe/Oslo"
@@ -85,6 +86,10 @@ If you want to save active events retrieved/parsed through [node-ical](https://g
 Change *timezone* per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
 1. Add or change the property `tz` and set the *timezone* you want for that calendar
+
+Show meeting urls:
+1. Open `calendars.json` and find the calendar you want to adjust
+1. Change `showMeetingUrl` from **false** to **true**
 
 Add properties you want printed to console per event per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
