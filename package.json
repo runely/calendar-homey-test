@@ -14,7 +14,7 @@
     "yargs": "^17.4.1"
   },
   "devDependencies": {
-    "standard": "17.0.0"
+    "standard": "17.1.0"
   },
   "scripts": {
     "refresh": "rm -rf node_modules/ && rm package-lock.json && npm i",
