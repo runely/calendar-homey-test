@@ -1,6 +1,6 @@
 const chalk = require('chalk')
 
-module.exports.calendars = () => {
+const calendars = () => {
   try {
     return require('./calendars.json').calendars.filter(calendar => calendar.import)
   } catch (error) {
@@ -14,7 +14,7 @@ module.exports.calendars = () => {
  * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
-module.exports.info = (message, ...additional) => {
+const info = (message, ...additional) => {
   console.log(chalk.white(message, additional))
 }
 
@@ -23,7 +23,7 @@ module.exports.info = (message, ...additional) => {
  * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
-module.exports.warn = (message, ...additional) => {
+const warn = (message, ...additional) => {
   console.warn(chalk.yellow(message, additional))
 }
 
@@ -32,7 +32,7 @@ module.exports.warn = (message, ...additional) => {
  * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
-module.exports.error = (message, ...additional) => {
+const error = (message, ...additional) => {
   console.error(chalk.red(message, additional))
 }
 
@@ -41,6 +41,26 @@ module.exports.error = (message, ...additional) => {
  * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
-module.exports.debug = (message, ...additional) => {
+const debug = (message, ...additional) => {
   console.log(chalk.cyan(message, additional))
+}
+
+const memuse = (msg = '') => {
+  const used = process.memoryUsage()
+  if (msg !== '') {
+    error(msg)
+  }
+  for (const key in used) {
+    error(`${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`)
+  }
+  console.log('')
+}
+
+module.exports = {
+  calendars,
+  info,
+  warn,
+  error,
+  debug,
+  memuse
 }

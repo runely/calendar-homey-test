@@ -4,7 +4,7 @@
   const moment = require('moment')
   const yargs = require('yargs/yargs')
 
-  const scriptStart = moment().format('x')
+  const scriptStart = new Date().getTime()
 
   const getEvents = require('./lib/calendarHomey/get-events')
   const { sortCalendars } = require('./lib/calendarHomey/sort-events')
@@ -14,7 +14,7 @@
 
   const args = yargs(process.argv.slice(2)).argv
 
-  const { info, error, debug } = config // { info, warn, error, debug }
+  const { info, error, debug, memuse } = config // { info, warn, error, debug }
   const calendars = config.calendars()
 
   if (!calendars || !Array.isArray(calendars) || calendars.length === 0) {
@@ -25,6 +25,8 @@
 
   let timezone
   const calendarsEvents = []
+
+  //memuse('Before calendar import')
   for await (const calendar of calendars) {
     const calendarEvents = await getEvents(calendar)
     if (!timezone && calendar.tz) {
@@ -42,6 +44,7 @@
       }
     }
   }
+  //memuse(`After all calendar import`)
 
   if (calendarsEvents.length === 0) {
     error('No calendars returned... Aborting...')
@@ -56,7 +59,7 @@
     })
     debug(`Total calendar events: ${totalCalendarsEvents}`)
 
-    const scriptGetEvents = moment().format('x')
+    const scriptGetEvents = new Date().getTime()
     debug(`\tSpent '${(scriptGetEvents - scriptStart) / 1000}' seconds to retrieve calendars`)
 
     // get next event
@@ -79,14 +82,14 @@
 
     // scriptEnd
     if (args.nextEvent || args.todaysEvents || args.tomorrowsEvents) {
-      const scriptEnd = moment().format('x')
+      const scriptEnd = new Date().getTime()
       debug(`\nApp ran for '${(scriptEnd - scriptStart) / 1000}' seconds`)
     }
   } catch (error_) {
     error('ERRRRROOOOOORRRRR: ', error_)
 
     // scriptEnd
-    const scriptEnd = moment().format('x')
+    const scriptEnd = new Date().getTime()
     debug(`\tApp ran for '${(scriptEnd - scriptStart) / 1000}' seconds`)
   }
 })()
