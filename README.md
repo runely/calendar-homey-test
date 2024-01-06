@@ -36,7 +36,10 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
                     "options": {
                         "saveAll": false,
                         "saveActive": false,
-                        "showMeetingUrls": false
+                        "showMeetingUrls": false,
+                        "printAllEvents": false,
+                        "printEventByIndex": -1,
+                        "printEventByUID": ""
                     },
                     "logProperties": [],
                     "tz": "Europe/Oslo"
@@ -90,6 +93,18 @@ Change *timezone* per calendar:
 Show meeting urls:
 1. Open `calendars.json` and find the calendar you want to adjust
 1. Change `showMeetingUrl` from **false** to **true**
+
+Print all events to console:
+1. Open `calendars.json` and find the calendar you want to adjust
+1. Change `printAllEvents` from **false** to **true**
+
+Print event by index to console:
+1. Open `calendars.json` and find the calendar you want to adjust
+1. Change `printEventByIndex` from **-1** to **0 or higher**
+
+Print event by UID to console:
+1. Open `calendars.json` and find the calendar you want to adjust
+1. Change `printEventByUID` from **""** to **"UID-of-event"**
 
 Add properties you want printed to console per event per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
