@@ -120,3 +120,6 @@ contents/**/*.ics
 contents/**/*.json
 calendars.json
 env.json
+
+# JetBrains Rider
+**/.idea/**/*
