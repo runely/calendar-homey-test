@@ -34,6 +34,7 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
                         "type": "months"
                     },
                     "options": {
+                        "downloadIcs": false,
                         "saveAll": false,
                         "saveActive": false,
                         "showMeetingUrls": false,
@@ -75,6 +76,11 @@ To change how far into the future you want to retrieve events:
 1. Open `calendars.json` and find the calendar you want to adjust
 1. Change `value` to any number and `type` to one of the predefined types
     1. "days", "hours", "milliseconds", "minutes", "months", "quarters", "seconds", "weeks", "years"
+
+If you want to download the actual *.ics file from the given URL:
+1. Open `calendars.json` and find the calendar you want to adjust
+1. Set `downloadIcs` to `true` to save the ics file, otherwise set it to `false`
+1. If set to `true`, the file will be saved to `contents/ics/<name>_<date>.ics`
 
 If you want to save all events retrieved/parsed through [node-ical](https://github.com/jens-maus/node-ical):
 1. Open `calendars.json` and find the calendar you want to adjust
