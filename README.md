@@ -40,7 +40,7 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
                         "showMeetingUrls": false,
                         "printAllEvents": false,
                         "printEventByIndex": -1,
-                        "printEventByUID": ""
+                        "printEventByUIDs": []
                     },
                     "logProperties": [],
                     "tz": "Europe/Oslo"
@@ -108,9 +108,9 @@ Print event by index to console:
 1. Open `calendars.json` and find the calendar you want to adjust
 1. Change `printEventByIndex` from **-1** to **0 or higher**
 
-Print event by UID to console:
+Print event by UIDs to console:
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Change `printEventByUID` from **""** to **"UID-of-event"**
+1. Change `printEventByUIDs` from **[]** to **["UID-of-event-1","UID-of-event-2"]**
 
 Add properties you want printed to console per event per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
