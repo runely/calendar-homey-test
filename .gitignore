@@ -123,3 +123,5 @@ env.json
 
 # JetBrains Rider
 **/.idea/**/*
+
+**/.DS_Store
