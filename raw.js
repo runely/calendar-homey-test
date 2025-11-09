@@ -14,10 +14,9 @@
   const nodeIcal = require('node-ical')
   const getActiveEvents = require('./lib/calendarHomey/get-active-events')
 
-  const config = require('./config')
-  const { warn, error, debug } = config
+  const { warn, error, debug, calendars: getCalendars } = require('./config')
 
-  const calendars = config.calendars()
+  const calendars = getCalendars()
   if (!calendars || !Array.isArray(calendars) || calendars.length === 0) {
     error('getEvents: Add at least one calendar in calendar.json')
     process.exit(1)

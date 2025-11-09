@@ -1,7 +1,4 @@
 (async () => {
-  const config = require('./config')
-
-  const moment = require('moment')
   const yargs = require('yargs/yargs')
 
   const scriptStart = new Date().getTime()
@@ -14,8 +11,8 @@
 
   const args = yargs(process.argv.slice(2)).argv
 
-  const { info, error, debug, memuse } = config // { info, warn, error, debug }
-  const calendars = config.calendars()
+  const { info, error, debug, calendars: getCalendars, memuse } = require('./config')
+  const calendars = getCalendars()
 
   if (!calendars || !Array.isArray(calendars) || calendars.length === 0) {
     info('getEvents: Add at least one calendar in calendar.json')
