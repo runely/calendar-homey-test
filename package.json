@@ -2,7 +2,11 @@
   "name": "no.runely.calendar.test",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "keywords": [],
   "author": "Rune Moskvil Lyngås <runely85@gmail.com>",
   "license": "ISC",
@@ -10,21 +14,24 @@
     "chalk": "4.1.2",
     "dayjs": "^1.11.19",
     "lodash.clonedeep": "4.5.0",
-    "moment-timezone": "0.6.0",
     "node-ical": "^0.22.1",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "standard": "17.1.2"
+    "@biomejs/biome": "2.3.5",
+    "@types/node": "^24.10.0",
+    "moment-timezone": "^0.6.0",
+    "typescript": "^5.9.3"
   },
   "scripts": {
+    "build": "tsc",
     "refresh": "rm -rf node_modules/ && rm package-lock.json && npm i",
     "calendars": "env TZ=UTC node from-file.js",
     "raw": "env TZ=UTC node raw.js",
     "calendars-and-next-event": "env TZ=UTC node from-file.js --nextEvent",
     "calendars-and-todays-events": "env TZ=UTC node from-file.js --todaysEvents",
     "calendars-and-tomorrows-events": "env TZ=UTC node from-file.js --tomorrowsEvents",
-    "test": "standard",
-    "fix": "standard --fix"
+    "test": "biome check",
+    "fix": "biome check --write"
   }
 }

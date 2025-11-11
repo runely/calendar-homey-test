@@ -1,4 +1,5 @@
-﻿[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+﻿![ts](https://badgen.net/badge/Built%20With/TypeScript/blue)
+[![Formatted with Biome](https://img.shields.io/badge/Formatted_and_Linted_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev/)
 
 # Test IcalCalendar behavior
 
