@@ -11,7 +11,7 @@
 
   const args = yargs(process.argv.slice(2)).argv
 
-  const { info, error, debug, calendars: getCalendars, memuse } = require('./config')
+  const { info, error, debug, calendars: getCalendars } = require('./config')
   const calendars = getCalendars()
 
   if (!calendars || !Array.isArray(calendars) || calendars.length === 0) {
@@ -23,7 +23,7 @@
   let timezone
   const calendarsEvents = []
 
-  //memuse('Before calendar import')
+  //memUse('Before calendar import')
   for await (const calendar of calendars) {
     const calendarEvents = await getEvents(calendar)
     if (!timezone && calendar.tz) {
@@ -41,7 +41,7 @@
       }
     }
   }
-  //memuse(`After all calendar import`)
+  //memUse(`After all calendar import`)
 
   if (calendarsEvents.length === 0) {
     error('No calendars returned... Aborting...')
@@ -83,7 +83,7 @@
       debug(`\nApp ran for '${(scriptEnd - scriptStart) / 1000}' seconds`)
     }
   } catch (error_) {
-    error('ERRRRROOOOOORRRRR: ', error_)
+    error('ERROR: ', error_)
 
     // scriptEnd
     const scriptEnd = new Date().getTime()

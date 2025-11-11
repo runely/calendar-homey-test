@@ -7,7 +7,7 @@
  * 
  * However, if an event uses Customized Time Zone, node-ical will treat this as UTC, and IcalCalendar will apply the timezone from the Homey. This will probably not be correct
  * 
- * Therefore, when IcalCalendar finds Africa/Abidjan as start tz and Etc/UTC as dtstamp tz, the event will be flagged as not to have the Homey timezone applied. Meaning that the raw time shown in the ics file is what will be used
+ * Therefore, when IcalCalendar finds Africa/Abidjan as start tz and Etc/UTC as DTStamp tz, the event will be flagged as not to have the Homey timezone applied. Meaning that the raw time shown in the ics file is what will be used
  * 
 */
 (async () => {
@@ -27,7 +27,7 @@
   const showOnlyTheseUids = []
 
   for await (const calendar of calendars) {
-    warn('Fetcing data for', calendar.name)
+    warn('Fetching data for', calendar.name)
     const data = calendar.options.isLocalFile ? nodeIcal.parseFile(calendar.uri) : await nodeIcal.fromURL(calendar.uri)
 
     let rawEvents

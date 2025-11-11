@@ -10,7 +10,7 @@ const calendars = () => {
 }
 
 /** @function
- * Log a info message to console
+ * Log an info message to console
  * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
@@ -28,7 +28,7 @@ const warn = (message, ...additional) => {
 }
 
 /** @function
- * Log a error message to console
+ * Log an error message to console
  * @param {string} message - Message to be written out to console
  * @param {any} additional - Any number of additional info to log out
  */
@@ -45,7 +45,7 @@ const debug = (message, ...additional) => {
   console.log(chalk.cyan(message, additional))
 }
 
-const memuse = (msg = '') => {
+const memUse = (msg = '') => {
   const used = process.memoryUsage()
   if (msg !== '') {
     error(msg)
@@ -62,5 +62,5 @@ module.exports = {
   warn,
   error,
   debug,
-  memuse
+  memUse
 }

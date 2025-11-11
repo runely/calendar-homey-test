@@ -3,7 +3,7 @@
 
 # Test IcalCalendar behavior
 
-This nodejs app will let you test [IcalCalendar](https://github.com/runely/calendar-homey) behavior:
+This Node.js app will let you test [IcalCalendar](https://github.com/runely/calendar-homey) behavior:
 
 * Get a list of the events retrieved from your calendar(s)
 * Get the next event happening across all your calendars
@@ -16,14 +16,14 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
     ```bash
     git clone https://github.com/runely/calendar-homey-test.git
     ```
-1. Install dependencies
+2. Install dependencies
     ```bash
     npm i
     ```
-1. Add your calendars
+3. Add your calendars
     1. Create the file `calendars.json`
-    1. Insert the following to test the test calendar
-        ```javascript
+    2. Insert the following to test the test calendar
+        ```json
         {
             "calendars": [
                 {
@@ -49,7 +49,7 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
             ]
         }
         ```
-    1. Add your own calendars to the list
+    3. Add your own calendars to the list
         1. If you want to test a local ics file, swap out the uri with full path to the ics file and add `"isLocalFile": true` to `"options"`
 
 ## Usage
@@ -58,15 +58,15 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
     ```bash
     npm run calendars
     ```
-* Get the next event happening across all your calendars aswell
+* Get the next event happening across all your calendars as well
     ```bash
     npm run calendars-and-next-event
     ```
-* Get a list of your events happening today aswell
+* Get a list of your events happening today as well
     ```bash
     npm run calendars-and-todays-events
     ```
-* Get a list of your events happening tomorrow aswell
+* Get a list of your events happening tomorrow as well
     ```bash
     npm run calendars-and-tomorrows-events
     ```
@@ -75,51 +75,51 @@ This nodejs app will let you test [IcalCalendar](https://github.com/runely/calen
 
 To change how far into the future you want to retrieve events:
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Change `value` to any number and `type` to one of the predefined types
+2. Change `value` to any number and `type` to one of the predefined types
     1. "days", "hours", "milliseconds", "minutes", "months", "quarters", "seconds", "weeks", "years"
 
 If you want to download the actual *.ics file from the given URL:
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Set `downloadIcs` to `true` to save the ics file, otherwise set it to `false`
-1. If set to `true`, the file will be saved to `contents/ics/<name>_<date>.ics`
+2. Set `downloadIcs` to `true` to save the ics file, otherwise set it to `false`
+3. If set to `true`, the file will be saved to `contents/ics/<name>_<date>.ics`
 
 If you want to save all events retrieved/parsed through [node-ical](https://github.com/jens-maus/node-ical):
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Set `saveAll` to `true` to save the file, otherwise set it to `false`
-1. If set to `true`, the file will be saved to `contents/raw/<name>_<date>.json`
+2. Set `saveAll` to `true` to save the file, otherwise set it to `false`
+3. If set to `true`, the file will be saved to `contents/raw/<name>_<date>.json`
 
 If you want to save active events retrieved/parsed through [node-ical](https://github.com/jens-maus/node-ical):
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Set `saveActive` to `true` to save the file, otherwise set it to `false`
-1. If set to `true`, the file will be saved to `contents/active/<name>_<date>.json`
+2. Set `saveActive` to `true` to save the file, otherwise set it to `false`
+3. If set to `true`, the file will be saved to `contents/active/<name>_<date>.json`
 
 Change *timezone* per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Add or change the property `tz` and set the *timezone* you want for that calendar
+2. Add or change the property `tz` and set the *timezone* you want for that calendar
 
 Show meeting urls:
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Change `showMeetingUrl` from **false** to **true**
+2. Change `showMeetingUrl` from **false** to **true**
 
 Print all events to console:
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Change `printAllEvents` from **false** to **true**
+2. Change `printAllEvents` from **false** to **true**
 
 Print event by index to console:
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Change `printEventByIndex` from **-1** to **0 or higher**
+2. Change `printEventByIndex` from **-1** to **0 or higher**
 
 Print event by UIDs to console:
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Change `printEventByUIDs` from **[]** to **["UID-of-event-1","UID-of-event-2"]**
+2. Change `printEventByUIDs` from **[]** to **["UID-of-event-1","UID-of-event-2"]**
 
 Add properties you want printed to console per event per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
-1. Add `event` to the `logProperties` array for console logging out the whole event
+2. Add `event` to the `logProperties` array for console logging out the whole event
 
     AND/OR
 
-1. Add one or more of these event property names to the `logProperties` array
+3. Add one or more of these event property names to the `logProperties` array
     - `type`
     - `params`
     - `tzid`
