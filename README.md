@@ -35,6 +35,7 @@ This Node.js app will let you test [IcalCalendar](https://github.com/runely/cale
                         "type": "months"
                     },
                     "options": {
+                        "isLocalFile": false,
                         "downloadIcs": false,
                         "saveAll": false,
                         "saveActive": false,

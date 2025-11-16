@@ -1,59 +1,100 @@
-'use strict'
-
-const moment = require('moment-timezone')
+/*const { dayjsIfy, getGuessedTimezone, toIsoString } = require('../dayjs-fns')
 const deepClone = require('lodash.clonedeep')
-const { debug, warn } = require('../../config') // { info, warn, error, debug }
+const { debug, warn } = require('../../config')
 const getRegularEventEnd = require('./find-regular-event-end')
 const hasData = require('./has-data')
-const extractMeetingUrl = require('./extract-meeting-url')
+const extractMeetingUrl = require('./extract-meeting-url')*/
 // const outputEvent = require('../debug/out-events-readable');
 
-const test = (summary, start, end, recurring = false, timezone, ...rest) => {
-  debug(`Type: '${!recurring ? 'Regular' : 'Recurring'}' -- Summary: '${summary}' -- Start: '${start}' -- End: '${end}' -- Timezone: '${timezone}' `, ...rest)
+import type { Dayjs } from "dayjs";
+//import deepClone from 'lodash.clonedeep';
+
+import { debug, warn } from "../../config";
+import { dayjsIfy, getGuessedTimezone, toIsoString } from "../dayjs-fns";
+/*import { findRegularEventEnd } from './find-regular-event-end';
+import { hasData } from "./has-data";
+import { extractMeetingUrl } from "./extract-meeting-url";*/
+import type { /*CalendarComponent,*/ CalendarResponse, /*DateWithTimeZone, VEvent*/ } from "node-ical";
+import type {IcalCalendarEventLimit, IcalCalendarLogProperty} from "../../types/IcalCalendarImport";
+import type {IcalCalendarEvent} from "../../types/IcalCalendarEvent";
+//import { printOutEventsReadable } from '../debug/out-events-readable';
+
+
+/*const test = (summary: string, start: Dayjs, end: Dayjs, recurring: boolean = false, timezone: string | undefined, ...rest: unknown[]): void => {
+  // TODO: Might need to add format to start and end
+  debug(`Type: '${!recurring ? 'Regular' : 'Recurring'}' -- Summary: '${summary}' -- Start: '${start}' (${toIsoString(start)}) -- End: '${end}' (${toIsoString(end)}) -- Timezone: '${timezone}' `, ...rest);
 }
 
-const getDuration = (start, end) => Number.parseInt(moment(end).format('x')) - Number.parseInt(moment(start).format('x'))
-const getEnd = (start, duration, timezone) => timezone ? moment.tz((Number.parseInt(moment(start).format('x')) + duration), 'x', timezone) : moment((Number.parseInt(moment(start).format('x')) + duration), 'x')
-const getPaddedDateString = date => {
-  const dateParts = [
-    date.get('years'),
-    (date.get('months') + 1) > 9 ? (date.get('months') + 1) : `0${(date.get('months') + 1)}`,
-    date.get('dates') > 9 ? date.get('dates') : `0${date.get('dates')}`
-  ]
-  const timeParts = [
-    date.get('hours') > 9 ? date.get('hours') : `0${date.get('hours')}`,
-    date.get('minutes') > 9 ? date.get('minutes') : `0${date.get('minutes')}`,
-    date.get('seconds') > 9 ? date.get('seconds') : `0${date.get('seconds')}`
-  ]
-
-  return `${dateParts.join('-')}T${timeParts.join(':')}.000Z`
+const getDuration = (start: DateWithTimeZone, end: DateWithTimeZone): number => {
+  return Number.parseInt(dayjsIfy(end).format("x")) - Number.parseInt(dayjsIfy(start).format('x'));
 }
-const convertToText = (prop, value, uid) => {
+
+const getEnd = (start: Dayjs | Date, duration: number, timezone: string | undefined): Dayjs => {
+  const startPlusDuration: number = Number.parseInt(dayjsIfy(start).format("x")) + duration;
+  return dayjsIfy(startPlusDuration, timezone)
+  //timezone ? moment.tz((Number.parseInt(moment(start).format('x')) + duration), 'x', timezone) : moment((Number.parseInt(moment(start).format('x')) + duration), 'x')
+}
+
+const getPaddedDateString = (date: Dayjs): string => {
+  const dateParts: string[] = [
+    `${date.get('years')}`,
+    date.get('months') + 1 > 9
+      ? `${date.get('months') + 1}`
+      : `0${date.get('months') + 1}`,
+    date.get('dates') > 9
+      ? `${date.get('dates')}`
+      : `0${date.get('dates')}`
+  ];
+  const timeParts: string[] = [
+    date.get('hours') > 9
+      ? `${date.get('hours')}`
+      : `0${date.get('hours')}`,
+    date.get('minutes') > 9
+      ? `${date.get('minutes')}`
+      : `0${date.get('minutes')}`,
+    date.get('seconds') > 9
+      ? `${date.get('seconds')}`
+      : `0${date.get('seconds')}`
+  ];
+
+  return `${dateParts.join('-')}T${timeParts.join(':')}.000Z`;
+}
+
+const convertToText = (prop: string, value: { params: unknown, val: string } | string, uid: string) => {
   if (typeof value === 'object') {
-    debug(`getActiveEvents/convertToText - '${prop}' was object. Using 'val' of object '${uid}'`)
-    return value.val
+    debug(`getActiveEvents/convertToText - '${prop}' was object. Using 'val' of object '${uid}'`);
+    return value.val;
   }
-  return value
+
+  return value;
 }
-const isInvalidTZ = tz => {
-  const invalid = ['Customized Time Zone', 'undefined']
-  return tz && invalid.map(i => tz.includes(i)).includes(true)
+
+const isInvalidTZ = (tz: string | undefined): boolean => {
+  const invalid: string[] = ['Customized Time Zone', 'undefined'];
+  if (tz === undefined) {
+    return false;
+  }
+
+  return invalid.map((i: string) => tz.includes(i)).includes(true)
 }
-const removeInvalidTZ = event => {
+
+const removeInvalidTZ = (event: VEvent): void => {
   // remove 'Customized Time Zone*'
   try {
     if (isInvalidTZ(event.start.tz)) {
-      console.log(`Invalid timezone (${event.start.tz}) found on`, event.summary)
+      console.log(`Invalid timezone (${event.start.tz}) found on`, event.summary);
       delete event.start.tz
       delete event.end.tz
       event.skipTZ = true
     }
+
     if (event.start.tz === 'Africa/Abidjan' && event.dtstamp.tz === 'Etc/UTC') {
       console.log(`Invalid timezone (${event.start.tz}) (this was probably Customized Time Zone) found on`, event.summary, event.uid)
       delete event.start.tz
       delete event.end.tz
       event.skipTZ = true
     }
+
     if (event.exdate) {
       for (const exdate in event.exdate) {
         if (isInvalidTZ(event.exdate[exdate].tz)) {
@@ -62,15 +103,18 @@ const removeInvalidTZ = event => {
         }
       }
     }
+
     if (event.rrule) {
       if (event.rrule.origOptions && isInvalidTZ(event.rrule.origOptions.tzid)) {
         delete event.rrule.origOptions.tzid
         delete event.rrule.origOptions.tzid
       }
+
       if (event.rrule.options && isInvalidTZ(event.rrule.options.tzid)) {
         delete event.rrule.options.tzid
         delete event.rrule.options.tzid
       }
+
       if (event.rrule.origOptions.tzid === undefined && event.rrule.options.tzid === undefined) {
         event.skipTZ = true
       }
@@ -81,59 +125,83 @@ const removeInvalidTZ = event => {
     console.log('Failed to remove invalid time zone:', error)
   }
 }
-const fixWholeDayExdates = event => {
-  const eventKeys = Object.keys(event)
-  if (!eventKeys.includes('MICROSOFT-CDO-ALLDAYEVENT') || event['MICROSOFT-CDO-ALLDAYEVENT'].toLowerCase() !== 'true') {
-    return
+
+const fixWholeDayExDates = (event: VEvent): void => {
+  const eventKeys: string[] = Object.keys(event);
+  if (!eventKeys.includes('MICROSOFT-CDO-ALLDAYEVENT') || ('MICROSOFT-CDO-ALLDAYEVENT' in event && (event['MICROSOFT-CDO-ALLDAYEVENT'] as string).toLowerCase() !== 'true')) {
+    return;
   }
 
   if (!eventKeys.includes('exdate')) {
-    return
+    return;
   }
 
-  const newExdate = []
-  warn(`Fixing whole day Microsoft Exchange 365 recurring exdate for UID=${event.uid}:`)
-  for (const exdateKey of Object.keys(event.exdate)) {
-    const exdateEntry = event.exdate[exdateKey]
-    const correctMoment = moment.tz(exdateEntry, exdateEntry.tz)
-    const correctISO = correctMoment.toISOString(true)
-    const correctDate = correctISO.slice(0, 10)
-    newExdate[correctDate] = new Date(correctISO.slice(0, 23))
-    warn(`'${exdateEntry.tz}' : '${exdateEntry}' <--> '${newExdate[correctDate]}'`)
+  const newExDate: Date[] = [];
+  warn(`Fixing whole day Microsoft Exchange 365 recurring exdate for UID=${event.uid}:`);
+  for (const exDateKey of Object.keys(event.exdate)) {
+    const exDateEntry: any = event.exdate[exDateKey];
+    const correctDayJs: Dayjs = dayjsIfy(exDateEntry, exDateEntry.tz);
+    const correctISO: string = toIsoString(correctDayJs);
+    const correctDate: string = correctISO.slice(0, 10);
+    newExDate[correctDate] = new Date(correctISO.slice(0, 23));
+    warn(`'${exDateEntry.tz}' : '${exDateEntry}' <--> '${newExDate[correctDate]}'`)
   }
 
-  event.exdate = newExdate
-}
+  event.exdate = newExDate
+}*/
 
-module.exports = (timezone, data, eventLimit, logProperties, extrasUIDs) => {
-  const usedTZ = timezone || moment.tz.guess()
-  const now = moment.tz(usedTZ)
-  const eventLimitStart = moment.tz(usedTZ).startOf('day')
-  const eventLimitEnd = moment.tz(usedTZ).endOf('day').add(eventLimit.value, eventLimit.type)
-  const events = []
-  let recurrenceEventCount = 0
-  let regularEventCount = 0
+export const getActiveEvents = (timezone: string | undefined, data: CalendarResponse, eventLimit: IcalCalendarEventLimit, logProperties: IcalCalendarLogProperty[], extrasUIDs?: string[]): IcalCalendarEvent[] => {
+  const usedTZ: string = timezone || getGuessedTimezone();
+  //const now: Dayjs = dayjsIfy(new Date(), usedTZ);
+  const eventLimitStart: Dayjs = dayjsIfy(new Date(), usedTZ).startOf('day');
+  const eventLimitEnd: Dayjs = dayjsIfy(new Date(), usedTZ).endOf('day').add(eventLimit.value, eventLimit.type);
+  /*const events: IcalCalendarEvent[] = [];
+  let recurrenceEventCount: number = 0;
+  let regularEventCount: number = 0;*/
 
   for (const event of Object.values(data)) {
-    if (event.type !== 'VEVENT') {
-      continue
+    if (event.type !== "VEVENT") {
+      continue;
+    }
+    
+    if (event.recurrenceid) {
+      debug(`We don't care about recurrenceid for now`);
+      continue;
     }
 
-    // set properties to be text value IF it's an object: https://github.com/jens-maus/node-ical/blob/cbb76af87ff6405f394acf993889742885cce0a0/ical.js#L78
-    event.summary = convertToText('summary', event.summary, event.uid)
-    event.location = convertToText('location', event.location, event.uid)
-    event.description = convertToText('description', event.description, event.uid)
-    event.uid = convertToText('uid', event.uid, event.uid)
+    let startDate: Dayjs = dayjsIfy(event.start);
+    let endDate: Dayjs = dayjsIfy(event.end);
+    
+    if (!event.rrule) {
+      // Single event
+      if (endDate.isBefore(eventLimitEnd)) {
+        continue;
+      }
+
+      debug(`Title: '${event.summary}' -- Start: '${startDate.format('LLLL')}' -- End: '${endDate.format('LLLL')}'`);
+    }
+  }
+
+  /*for (const event of Object.values(data)) {
+    if (event.type !== 'VEVENT') {
+      continue;
+    }
 
     // stop if required properties are missing
     if (!hasData(event.start) || !hasData(event.end)) {
       throw new Error(`"DTSTART" and/or "DTEND" is missing in event with UID: ${event.uid}`)
     }
 
-    // remove invalid timezones from event
-    removeInvalidTZ(event)
+    // set properties to be text value IF it's an object: https://github.com/jens-maus/node-ical/blob/cbb76af87ff6405f394acf993889742885cce0a0/ical.js#L78
+    event.summary = convertToText('summary', event.summary, event.uid);
+    event.location = convertToText('location', event.location, event.uid);
+    event.description = convertToText('description', event.description, event.uid);
+    event.uid = convertToText('uid', event.uid, event.uid);
 
-    if (typeof event.rrule === 'undefined') {
+    // remove invalid timezones from event
+    //removeInvalidTZ(event)
+
+    if (typeof event.rrule === 'undefined') 
       // regular event
       try {
         const skipTZ = event.skipTZ || event.start.toUTCString().includes('00:00:00')
@@ -150,9 +218,9 @@ module.exports = (timezone, data, eventLimit, logProperties, extrasUIDs) => {
         }
 
         // only add event if
-        //    end hasn't happend yet AND start is between eventLimitStart and eventLimitEnd
+        //    end hasn't happened yet AND start is between eventLimitStart and eventLimitEnd
         // ||
-        //    start has happend AND end hasn't happend yet (ongoing)
+        //    start has happened AND end hasn't happened yet (ongoing)
         if ((now.diff(end, 'seconds') < 0 && start.isBetween(eventLimitStart, eventLimitEnd) === true) // ongoing event
             || (now.diff(start, 'seconds') > 0 && now.diff(end, 'seconds') < 0)) { // not started event
           events.push({ ...event, start, end })
@@ -187,9 +255,9 @@ module.exports = (timezone, data, eventLimit, logProperties, extrasUIDs) => {
       const ongoingDates = event.rrule.between(rruleStart, rruleEnd, true).filter(date => !moment(date).isAfter(eventLimitEnd.toDate()) && !dates.map(d => d.getTime() === date.getTime()).includes(true))
       ongoingDates.forEach(date => dates.push(date))
 
-      // the "dates" array contains the set of dates within our desired date range range that are valid
+      // the "dates" array contains the set of dates within our desired date range that are valid
       // for the recurrence rule.  *However*, it's possible for us to have a specific recurrence that
-      // had its date changed from outside the range to inside the range.  One way to handle this is
+      // had its date changed from outside the range to inside the range. One way to handle this is
       // to add *all* recurrence override entries into the set of dates that we check, and then later
       // filter out any recurrences that don't actually belong within our range.
       let recurrencesMoved = []
@@ -259,7 +327,7 @@ module.exports = (timezone, data, eventLimit, logProperties, extrasUIDs) => {
       // convert all recurring dates from UTC to local moment instances IF event.skipTZ doesn't exist or is false
       const localDates = dates.map(date => event.skipTZ ? moment(date.toISOString()) : moment.tz(date.toISOString(), usedTZ))
 
-      fixWholeDayExdates(event)
+      fixWholeDayExDates(event)
 
       let logged = false
       for (const date of localDates) {
@@ -326,7 +394,7 @@ module.exports = (timezone, data, eventLimit, logProperties, extrasUIDs) => {
             end = event.skipTZ ? getEnd(start, duration) : getEnd(start, duration, usedTZ)
           }
         }
-        // make sure the end time hasn't already past and that start time isn't too long into the future
+        // make sure the end time hasn't already past and that start time isn't either long into the future
         
         if (end.isBefore(now) || start.isAfter(eventLimitEnd)) {
           // do not add event
@@ -379,7 +447,7 @@ module.exports = (timezone, data, eventLimit, logProperties, extrasUIDs) => {
     }
   }
 
-  debug(`get-active-events: Recurrances: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`)
+  debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`)
 
   // keep only properties used
   return events.map(event => {
@@ -401,5 +469,5 @@ module.exports = (timezone, data, eventLimit, logProperties, extrasUIDs) => {
       freebusy,
       meetingUrl
     }
-  })
+  })*/
 }

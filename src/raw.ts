@@ -14,7 +14,7 @@
   const nodeIcal = require('node-ical')
   const getActiveEvents = require('./lib/calendarHomey/get-active-events')
 
-  const { warn, error, debug, calendars: getCalendars } = require('./config')
+  const { warn, error, debug, getCalendars: getCalendars } = require('./config')
 
   const calendars = getCalendars()
   if (!calendars || !Array.isArray(calendars) || calendars.length === 0) {

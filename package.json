@@ -19,7 +19,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.5",
+    "@types/chalk": "^0.4.31",
     "@types/node": "^24.10.0",
+    "@types/yargs": "^17.0.34",
     "moment-timezone": "^0.6.0",
     "typescript": "^5.9.3"
   },
@@ -29,8 +31,8 @@
     "calendars": "env TZ=UTC node from-file.js",
     "raw": "env TZ=UTC node raw.js",
     "calendars-and-next-event": "env TZ=UTC node from-file.js --nextEvent",
-    "calendars-and-todays-events": "env TZ=UTC node from-file.js --todaysEvents",
-    "calendars-and-tomorrows-events": "env TZ=UTC node from-file.js --tomorrowsEvents",
+    "calendars-and-todays-events": "env TZ=UTC node from-file.js --eventsToday",
+    "calendars-and-tomorrows-events": "env TZ=UTC node from-file.js --eventsTomorrow",
     "test": "biome check",
     "fix": "biome check --write"
   }
