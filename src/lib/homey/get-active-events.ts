@@ -4,21 +4,22 @@ const { debug, warn } = require('../../config')
 const getRegularEventEnd = require('./find-regular-event-end')
 const hasData = require('./has-data')
 const extractMeetingUrl = require('./extract-meeting-url')*/
+
 // const outputEvent = require('../debug/out-events-readable');
 
 import type { Dayjs } from "dayjs";
+
 //import deepClone from 'lodash.clonedeep';
 
-import { debug, warn } from "../../config";
-import { dayjsIfy, getGuessedTimezone, toIsoString } from "../dayjs-fns";
-/*import { findRegularEventEnd } from './find-regular-event-end';
-import { hasData } from "./has-data";
-import { extractMeetingUrl } from "./extract-meeting-url";*/
-import type { /*CalendarComponent,*/ CalendarResponse, /*DateWithTimeZone, VEvent*/ } from "node-ical";
-import type {IcalCalendarEventLimit, IcalCalendarLogProperty} from "../../types/IcalCalendarImport";
-import type {IcalCalendarEvent} from "../../types/IcalCalendarEvent";
-//import { printOutEventsReadable } from '../debug/out-events-readable';
-
+/*import { findRegularEventEnd } from './find-regular-event-end.js';
+import { hasData } from "./has-data.js";
+import { extractMeetingUrl } from "./extract-meeting-url.js";*/
+import type { /*CalendarComponent,*/ CalendarResponse /*DateWithTimeZone, VEvent*/ } from "node-ical";
+import { debug /*, warn*/ } from "../../config.js";
+import type { IcalCalendarEvent } from "../../types/IcalCalendarEvent";
+import type { IcalCalendarEventLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport";
+import { dayjsIfy, getGuessedTimezone, toIsoString } from "../dayjs-fns.js";
+//import { printOutEventsReadable } from '../debug/out-events-readable.js';
 
 /*const test = (summary: string, start: Dayjs, end: Dayjs, recurring: boolean = false, timezone: string | undefined, ...rest: unknown[]): void => {
   // TODO: Might need to add format to start and end
@@ -150,37 +151,58 @@ const fixWholeDayExDates = (event: VEvent): void => {
   event.exdate = newExDate
 }*/
 
-export const getActiveEvents = (timezone: string | undefined, data: CalendarResponse, eventLimit: IcalCalendarEventLimit, logProperties: IcalCalendarLogProperty[], extrasUIDs?: string[]): IcalCalendarEvent[] => {
+export const getActiveEvents = (
+  timezone: string | undefined,
+  data: CalendarResponse,
+  eventLimit: IcalCalendarEventLimit,
+  logProperties: IcalCalendarLogProperty[],
+  extrasUIDs?: string[]
+): IcalCalendarEvent[] => {
   const usedTZ: string = timezone || getGuessedTimezone();
   //const now: Dayjs = dayjsIfy(new Date(), usedTZ);
-  const eventLimitStart: Dayjs = dayjsIfy(new Date(), usedTZ).startOf('day');
-  const eventLimitEnd: Dayjs = dayjsIfy(new Date(), usedTZ).endOf('day').add(eventLimit.value, eventLimit.type);
-  /*const events: IcalCalendarEvent[] = [];
+  const eventLimitStart: Dayjs = dayjsIfy(new Date(), usedTZ).startOf("day");
+  const eventLimitEnd: Dayjs = dayjsIfy(new Date(), usedTZ).endOf("day").add(eventLimit.value, eventLimit.type);
+  //const events: IcalCalendarEvent[] = [];
   let recurrenceEventCount: number = 0;
-  let regularEventCount: number = 0;*/
+  let regularEventCount: number = 0;
+
+  debug(
+    `get-active-events: Using timezone '${usedTZ}' -- Event limit start: '${eventLimitStart.format("LLLL")}' -- Event limit end: '${eventLimitEnd.format("LLLL")}' -- logPropertiesCount: ${logProperties.length} -- extrasUIDsCount: ${Array.isArray(extrasUIDs) ? extrasUIDs.length : 0}`
+  );
 
   for (const event of Object.values(data)) {
     if (event.type !== "VEVENT") {
       continue;
     }
-    
+
     if (event.recurrenceid) {
       debug(`We don't care about recurrenceid for now`);
       continue;
     }
 
-    let startDate: Dayjs = dayjsIfy(event.start);
-    let endDate: Dayjs = dayjsIfy(event.end);
-    
+    const startDate: Dayjs = dayjsIfy(event.start);
+    const endDate: Dayjs = dayjsIfy(event.end);
+
     if (!event.rrule) {
-      // Single event
-      if (endDate.isBefore(eventLimitEnd)) {
+      // Regular event
+      regularEventCount++;
+      if (endDate.isBefore(eventLimitEnd) || startDate.isAfter(eventLimitEnd)) {
         continue;
       }
 
-      debug(`Title: '${event.summary}' -- Start: '${startDate.format('LLLL')}' -- End: '${endDate.format('LLLL')}'`);
+      debug(
+        `Title: '${event.summary}' -- Start: '${startDate.format("LLLL")}' (ISO:${toIsoString(startDate)}) -- End: '${endDate.format("LLLL")}' (ISO:${toIsoString(endDate)})`
+      );
+      continue;
     }
+
+    // Recurring event
+    recurrenceEventCount++;
   }
+
+  debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`);
+
+  return [];
 
   /*for (const event of Object.values(data)) {
     if (event.type !== 'VEVENT') {
@@ -470,4 +492,4 @@ export const getActiveEvents = (timezone: string | undefined, data: CalendarResp
       meetingUrl
     }
   })*/
-}
+};

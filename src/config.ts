@@ -1,19 +1,19 @@
-import chalk from 'chalk';
+import chalk from "chalk";
 
-import type { IcalCalendarImport } from './types/IcalCalendarImport'
+import type { IcalCalendarImport } from "./types/IcalCalendarImport";
 
 export const getCalendars = (): IcalCalendarImport[] => {
   try {
-    return (require('./calendars.json') as { calendars: IcalCalendarImport[] }).calendars.filter((calendar: IcalCalendarImport) => calendar.import)
+    return (require("../calendars.json") as { calendars: IcalCalendarImport[] }).calendars.filter((calendar: IcalCalendarImport) => calendar.import);
   } catch (err) {
     if (err instanceof Error) {
-      error(err.message)
+      error(err.message);
     } else {
-      error("Huh?")
+      error("Huh?");
     }
-    return []
+    return [];
   }
-}
+};
 
 /**
  * Log an info message to console
@@ -22,8 +22,8 @@ export const getCalendars = (): IcalCalendarImport[] => {
  * @param additional - Any number of additional info to log out
  */
 export const info = (message: string, ...additional: unknown[]): void => {
-  console.log(chalk.white(message, additional))
-}
+  console.log(chalk.white(message, additional));
+};
 
 /**
  * Log a warning message to console
@@ -32,8 +32,8 @@ export const info = (message: string, ...additional: unknown[]): void => {
  * @param additional - Any number of additional info to log out
  */
 export const warn = (message: string, ...additional: unknown[]): void => {
-  console.warn(chalk.yellow(message, additional))
-}
+  console.warn(chalk.yellow(message, additional));
+};
 
 /**
  * Log an error message to console
@@ -42,8 +42,8 @@ export const warn = (message: string, ...additional: unknown[]): void => {
  * @param additional - Any number of additional info to log out
  */
 export const error = (message: string, ...additional: unknown[]): void => {
-  console.error(chalk.red(message, additional))
-}
+  console.error(chalk.red(message, additional));
+};
 
 /**
  * Log a debug message to console
@@ -52,8 +52,8 @@ export const error = (message: string, ...additional: unknown[]): void => {
  * @param additional - Any number of additional info to log out
  */
 export const debug = (message: string, ...additional: unknown[]): void => {
-  console.log(chalk.cyan(message, additional))
-}
+  console.log(chalk.cyan(message, additional));
+};
 
 /*const memUse = (msg?: string) => {
   const used = process.memoryUsage()

@@ -123,5 +123,6 @@ env.json
 
 # JetBrains Rider
 **/.idea/**/*
+**/Folder.DotSettings*
 
 **/.DS_Store

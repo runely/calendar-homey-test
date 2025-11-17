@@ -1,11 +1,9 @@
 import type { Dayjs } from "dayjs";
-
-import { dayjsIfy } from "../dayjs-fns";
-
 import type { IcalCalendar } from "../../types/IcalCalendar";
 import type { IcalCalendarEvent, IcalCalendarEventWithName } from "../../types/IcalCalendarEvent";
+import { dayjsIfy } from "../dayjs-fns.js";
 
-import { sortCalendarEvents } from './sort-events';
+import { sortCalendarEvents } from "./sort-events.js";
 
 export const getEventsToday = (calendars: IcalCalendar[], timezone: string | undefined): IcalCalendarEventWithName[] => {
   const eventsToday: IcalCalendarEventWithName[] = [];
@@ -15,7 +13,7 @@ export const getEventsToday = (calendars: IcalCalendar[], timezone: string | und
     calendar.events.forEach((event: IcalCalendarEvent) => {
       const startDiff: number = now.diff(event.start);
       const endDiff: number = now.diff(event.end);
-      const startIsSameDay: boolean = event.start.isSame(now, 'day');
+      const startIsSameDay: boolean = event.start.isSame(now, "day");
 
       const todayNotStartedYet: boolean = startDiff < 0 && startIsSameDay;
       const todayAlreadyStarted: boolean = startDiff > 0 && startIsSameDay && endDiff < 0;
@@ -28,4 +26,4 @@ export const getEventsToday = (calendars: IcalCalendar[], timezone: string | und
 
   sortCalendarEvents(eventsToday);
   return eventsToday;
-}
+};

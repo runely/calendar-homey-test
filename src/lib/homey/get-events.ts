@@ -1,20 +1,17 @@
-import { join } from 'node:path';
-import nodeIcal, {type CalendarComponent, type CalendarResponse} from 'node-ical';
-import { Blob } from 'node:buffer';
-
-import { downloadIcsFile } from '../debug/download-ics-file';
-import { saveIcsFile } from '../debug/save-ics-file';
-
-import { debug, info, warn, error } from '../../config';
-import { getActiveEvents } from './get-active-events';
-
-import type { IcalCalendarImport } from "../../types/IcalCalendarImport";
+import { Blob } from "node:buffer";
+import { join } from "node:path";
+import nodeIcal, { type CalendarComponent, type CalendarResponse } from "node-ical";
+import { debug, error, info, warn } from "../../config.js";
 import type { IcalCalendar } from "../../types/IcalCalendar";
 import type { IcalCalendarEvent } from "../../types/IcalCalendarEvent";
+import type { IcalCalendarImport } from "../../types/IcalCalendarImport";
+import { downloadIcsFile } from "../debug/download-ics-file.js";
+import { saveIcsFile } from "../debug/save-ics-file.js";
+import { getActiveEvents } from "./get-active-events.js";
 
 const createDateFilename = (name: string, date: Date): string => {
-  return `${name}_${date.getDate()}.${(date.getMonth() + 1)}.${date.getFullYear()}`;
-}
+  return `${name}_${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+};
 
 const printEventsByIndex = (printEventByIndex: number, values: CalendarComponent[]): void => {
   if (printEventByIndex > values.length) {
@@ -30,7 +27,7 @@ const printEventsByIndex = (printEventByIndex: number, values: CalendarComponent
   }
 
   console.dir(value);
-}
+};
 
 const printEventsByUids = (data: CalendarResponse, values: CalendarComponent[], printEventByUIDs: string[]): void => {
   const lowerCasedKeys: string[] = Object.keys(data).map((k: string) => k.toLowerCase());
@@ -58,83 +55,81 @@ const printEventsByUids = (data: CalendarResponse, values: CalendarComponent[], 
 
     console.dir(value);
   }
-}
+};
 
 export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<IcalCalendar | null> => {
   const calendar: IcalCalendar = {
-    calendarName: 'N/A',
+    calendarName: "N/A",
     events: []
   };
 
   // get ical events
   const { name, eventLimit, options, tz, logProperties } = calendarsItem;
   let { uri } = calendarsItem;
-  const isLocalFile = options.isLocalFile !== undefined && options.isLocalFile || false;
+  const isLocalFile = (options.isLocalFile !== undefined && options.isLocalFile) || false;
 
-  if (uri === '') {
+  if (uri === "") {
     warn(`getEvents: Calendar '${name}' has empty uri. Skipping...`);
     return null;
   }
 
-  if (!isLocalFile && !uri.includes('http://') && !uri.includes('https://') && !uri.includes('webcal://')) {
+  if (!isLocalFile && !uri.includes("http://") && !uri.includes("https://") && !uri.includes("webcal://")) {
     warn(`getEvents: Uri for calendar '${name}' is invalid. Skipping...`);
     return null;
   }
 
-  if (uri.indexOf('webcal://') === 0) {
-    uri = uri.replace('webcal://', 'https://');
+  if (uri.indexOf("webcal://") === 0) {
+    uri = uri.replace("webcal://", "https://");
     info(`getEvents: Calendar '${name}': webcal found and replaced with https://`);
   }
 
   info(`getEvents: Getting events (${eventLimit.value} ${eventLimit.type} ahead) for calendar '${name}' (${uri}) (${tz})`);
 
   try {
-    const data: CalendarResponse = !isLocalFile
-      ? await nodeIcal.fromURL(uri)
-      : nodeIcal.parseFile(uri);
+    const data: CalendarResponse = !isLocalFile ? await nodeIcal.fromURL(uri) : nodeIcal.parseFile(uri);
 
-    debug(`nodeIcal(${!isLocalFile ? 'URL' : 'FILE'}): Success getting data via node-ical`);
+    debug(`nodeIcal(${!isLocalFile ? "URL" : "FILE"}): Success getting data via node-ical`);
     const d: Date = new Date();
 
     if (options.saveAll) {
-      const rawPath: string = join(__dirname, `../../contents/raw/${createDateFilename(name, d)}.${typeof data === 'object' ? 'json' : 'ics'}`);
+      const rawPath: string = join(__dirname, `../../contents/raw/${createDateFilename(name, d)}.${typeof data === "object" ? "json" : "ics"}`);
       warn(`About to save file to path '${rawPath}'`);
-      saveIcsFile((typeof data === 'object' ? JSON.stringify(data, null, 2) : data), rawPath);
-      warn('Raw file saved');
+      saveIcsFile(typeof data === "object" ? JSON.stringify(data, null, 2) : data, rawPath);
+      warn("Raw file saved");
     }
 
     if (options.printAllEvents) {
-      info('Print of all events:');
+      info("Print of all events:");
       console.dir(data);
     }
 
-    const isPrintEventByIndex: boolean = typeof options.printEventByIndex !== 'undefined' && options.printEventByIndex > -1;
-    const isPrintEventByUIDs: boolean = Array.isArray(options.printEventByUIDs) && options.printEventByUIDs.length > 0;
+    const values: CalendarComponent[] = Object.values(data);
 
-    if (isPrintEventByIndex || isPrintEventByUIDs) {
-      const values: CalendarComponent[] = Object.values(data);
+    if (options.printEventByIndex !== undefined && options.printEventByIndex > -1) {
+      printEventsByIndex(options.printEventByIndex, values);
+    }
 
-      if (isPrintEventByIndex) {
-        printEventsByIndex(options.printEventByIndex!, values);
-      }
-
-      if (isPrintEventByUIDs) {
-        printEventsByUids(data, values, options.printEventByUIDs!);
-      }
+    if (Array.isArray(options.printEventByUIDs) && options.printEventByUIDs.length > 0) {
+      printEventsByUids(data, values, options.printEventByUIDs);
     }
 
     const activeEvents: IcalCalendarEvent[] = getActiveEvents(tz, data, eventLimit, logProperties);
     const totalEventsSize: number = new Blob([JSON.stringify(data)]).size / 1000;
 
-    info(`getEvents: Events for calendar '${name}' found. Event count: ${activeEvents.length}. Total event count for calendar: ${Object.keys(data).length}. Total event size for calendar: ${totalEventsSize}KB\n`);
+    info(
+      `getEvents: Events for calendar '${name}' found. Event count: ${activeEvents.length}. Total event count for calendar: ${Object.keys(data).length}. Total event size for calendar: ${totalEventsSize}KB\n`
+    );
     calendar.calendarName = name;
     calendar.events = activeEvents;
 
     if (options.saveActive) {
-      const activePath: string = join(__dirname, `../../contents/active/${createDateFilename(name, d)}.${typeof activeEvents === 'object' ? 'json' : 'ics'}`);
+      const activePath: string = join(
+        __dirname,
+        `../../contents/active/${createDateFilename(name, d)}.${typeof activeEvents === "object" ? "json" : "ics"}`
+      );
       warn(`About to save file to path '${activePath}'`);
-      saveIcsFile((typeof activeEvents === 'object' ? JSON.stringify(activeEvents, null, 2) : activeEvents), activePath);
-      warn('Active file saved');
+      saveIcsFile(typeof activeEvents === "object" ? JSON.stringify(activeEvents, null, 2) : activeEvents, activePath);
+      warn("Active file saved");
     }
 
     if (!isLocalFile && options.downloadIcs) {
@@ -144,19 +139,19 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Ical
         const icsPath: string = join(__dirname, `../../contents/ics/${createDateFilename(name, d)}.ics`);
         warn(`About to save ics file to path '${icsPath}'`);
         saveIcsFile(icsData, icsPath);
-        warn('Ics file saved');
+        warn("Ics file saved");
       }
     }
   } catch (_error) {
     if (_error instanceof Error) {
-      error(`getEvents: Failed to get events for calendar '${name}' '${uri}' :`, _error.message, '\n');
+      error(`getEvents: Failed to get events for calendar '${name}' '${uri}' :`, _error.message, "\n");
       console.table(_error.stack);
-      
+
       return calendar;
     }
 
-    error(`getEvents: Failed to get events for calendar '${name}' '${uri}' :`, _error, '\n');
+    error(`getEvents: Failed to get events for calendar '${name}' '${uri}' :`, _error, "\n");
   }
 
   return calendar;
-}
+};

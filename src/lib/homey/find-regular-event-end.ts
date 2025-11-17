@@ -1,8 +1,6 @@
 import type { Dayjs } from "dayjs";
-
-import { dayjsIfy } from '../dayjs-fns';
-
 import type { VEvent } from "node-ical";
+import { dayjsIfy } from "../dayjs-fns.js";
 
 /*type DurationUnit = 'W' | 'D' | 'H' | 'M' | 'S';
 
@@ -53,7 +51,7 @@ export const findRegularEventEnd = (event: VEvent, timezone: string | undefined)
     return end.add(1, "day");
   }*/
 
-  if (event.datetype === 'date-time') {
+  if (event.datetype === "date-time") {
     return end;
   }
 
@@ -63,5 +61,5 @@ export const findRegularEventEnd = (event: VEvent, timezone: string | undefined)
     end = event.duration.startsWith('-') ? end.subtract(durationUnit, unit.name) : end.add(durationUnit, unit.name)
   })*/
 
-  return end
-}
+  return end;
+};

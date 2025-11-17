@@ -28,11 +28,11 @@
   "scripts": {
     "build": "tsc",
     "refresh": "rm -rf node_modules/ && rm package-lock.json && npm i",
-    "calendars": "env TZ=UTC node from-file.js",
-    "raw": "env TZ=UTC node raw.js",
-    "calendars-and-next-event": "env TZ=UTC node from-file.js --nextEvent",
-    "calendars-and-todays-events": "env TZ=UTC node from-file.js --eventsToday",
-    "calendars-and-tomorrows-events": "env TZ=UTC node from-file.js --eventsTomorrow",
+    "calendars": "npm run build && env TZ=UTC node dist/from-file.js",
+    "raw": "npm run build && env TZ=UTC node dist/raw.js",
+    "calendars-and-next-event": "npm run build && env TZ=UTC node dist/from-file.js nextEvent",
+    "calendars-and-todays-events": "npm run build && env TZ=UTC node dist/from-file.js eventsToday",
+    "calendars-and-tomorrows-events": "npm run build && env TZ=UTC node dist/from-file.js eventsTomorrow",
     "test": "biome check",
     "fix": "biome check --write"
   }

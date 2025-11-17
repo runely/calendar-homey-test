@@ -1,7 +1,7 @@
 import type { Dayjs } from "dayjs";
-import type { DateType } from 'node-ical';
+import type { DateType } from "node-ical";
 
-export type BusyStatus = 'FREE' | 'TENTATIVE' | 'BUSY' | 'OOF';
+export type BusyStatus = "FREE" | "TENTATIVE" | "BUSY" | "OOF";
 
 export type IcalCalendarEvent = {
   start: Dayjs;

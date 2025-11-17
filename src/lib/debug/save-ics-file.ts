@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { error } from '../../config';
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
+import { error } from "../../config.js";
 
 export const saveIcsFile = (data: string, path: string): void => {
   try {
@@ -13,4 +13,4 @@ export const saveIcsFile = (data: string, path: string): void => {
   } catch (_error) {
     error(`save-ics-file: Failed to save data to path: '${path}':`, _error);
   }
-}
+};
