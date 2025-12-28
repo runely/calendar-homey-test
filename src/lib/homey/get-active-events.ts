@@ -263,7 +263,7 @@ export const getActiveEvents = (
 
     if (event.rrule) {
       // Recurring event
-      debug(`Recurrence start. Summary: '${event.summary}'`);
+      debug(`Recurrence ${event.datetype === "date" ? "FULL DAY" : ""} start. Summary: '${event.summary}'`);
 
       let logged: boolean = false;
       const recurrenceDates: IcalOccurence[] = getRecurrenceDates(event, eventLimitStart, eventLimitEnd, usedTZ);
@@ -321,7 +321,7 @@ export const getActiveEvents = (
           logged = true;
         }
 
-        console.log(
+        /*console.log(
           "Start:",
           currentEvent.start.toISOString(),
           currentEvent.start.tz,
@@ -329,12 +329,12 @@ export const getActiveEvents = (
           currentStartDate.toISO(),
           currentStartDate.zoneName
         );
-        console.log("End:", currentEvent.end.toISOString(), currentEvent.start.tz, "-- Converted:", currentEndDate.toISO(), currentEndDate.zoneName);
+        console.log("End:", currentEvent.end.toISOString(), currentEvent.start.tz, "-- Converted:", currentEndDate.toISO(), currentEndDate.zoneName);*/
 
         currentEvent.uid = `${currentEvent.uid}_${currentStartDate.toISO().slice(0, 10)}`;
 
         debug(
-          `Recurrence Summary: '${currentEvent.summary}' -- Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' -- End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' -- UID: '${currentEvent.uid}'`
+          `Recurrence Summary: '${currentEvent.summary}' -- Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentStartDate.toISO()} (${currentStartDate.zoneName})) -- End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentEndDate.toISO()} (${currentEndDate.zoneName})) -- UID: '${currentEvent.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
         );
         events.push(createCalendarEvent(currentEvent, currentStartDate, currentEndDate));
       }
@@ -343,7 +343,7 @@ export const getActiveEvents = (
       continue;
     }
 
-    debug(`Summary start: '${event.summary}'`);
+    debug(`Summary ${event.datetype === "date" ? "FULL DAY" : ""} start: '${event.summary}'`);
 
     regularEventCount++;
 
@@ -356,11 +356,11 @@ export const getActiveEvents = (
       }
     });
 
-    console.log("Start:", event.start.toISOString(), event.start.tz, "-- Converted:", startDate.toISO(), startDate.zoneName);
-    console.log("End:", event.end.toISOString(), event.start.tz, "-- Converted:", endDate.toISO(), endDate.zoneName);
+    /*console.log("Start:", event.start.toISOString(), event.start.tz, "-- Converted:", startDate.toISO(), startDate.zoneName);
+    console.log("End:", event.end.toISOString(), event.start.tz, "-- Converted:", endDate.toISO(), endDate.zoneName);*/
 
     debug(
-      `Summary: '${event.summary}' -- Start: '${startDate.toFormat("dd.MM.yyyy HH:mm:ss")}' -- End: '${endDate.toFormat("dd.MM.yyyy HH:mm:ss")}' -- UID: '${event.uid}'`
+      `Summary: '${event.summary}' -- Start: '${startDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${startDate.toISO()} (${startDate.zoneName})) -- End: '${endDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${endDate.toISO()} (${endDate.zoneName})) -- UID: '${event.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
     );
 
     debug(`Summary end: '${event.summary}'`);
