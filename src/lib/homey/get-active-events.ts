@@ -268,9 +268,13 @@ export const getActiveEvents = (
       let logged: boolean = false;
       const recurrenceDates: IcalOccurence[] = getRecurrenceDates(event, eventLimitStart, eventLimitEnd, usedTZ);
       for (const { occurenceStart, lookupKey } of recurrenceDates) {
+        if (event.exdate?.[lookupKey]) {
+          warn(`ExDate found for event UID '${event.uid}' on date '${lookupKey}'. Skipping this recurrence.`);
+          continue;
+        }
+
         let currentEvent: VEvent = deepClone(event);
         let currentDuration: Duration<true> = endDate.diff(startDate);
-
         let currentStartDate: DateTime<Valid> = occurenceStart;
 
         if (currentEvent.recurrences?.[lookupKey]) {
@@ -295,9 +299,6 @@ export const getActiveEvents = (
           });
 
           currentDuration = overrideEndDate.diff(currentStartDate);
-        } else if (currentEvent.exdate?.[lookupKey]) {
-          warn(`ExDate found for event UID '${event.uid}' on date '${lookupKey}'. Skipping this recurrence.`);
-          continue;
         }
 
         const currentEndDate: DateTime<Valid> = currentStartDate.plus(currentDuration);
