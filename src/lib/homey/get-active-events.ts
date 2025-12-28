@@ -152,7 +152,7 @@ const getRecurrenceDates = (
         localTimeZone: localTimeZone,
         fullDayEvent: event.datetype === "date",
         keepOriginalZonedTime: true,
-        quiet: false
+        quiet: true
       });
 
       const occurenceUtc: DateTime<Valid> = occurence.toUTC();
@@ -184,7 +184,7 @@ const getRecurrenceDates = (
               localTimeZone: localTimeZone,
               fullDayEvent: event.datetype === "date",
               keepOriginalZonedTime: true,
-              quiet: false
+              quiet: true
             })
           : null;
 
