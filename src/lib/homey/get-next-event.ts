@@ -1,11 +1,11 @@
 import { DateTime } from "luxon";
+
 import type { Valid } from "luxon/src/_util";
-
-import { luxGetZonedDateTime } from "../luxon-fns.js";
-
 import type { IcalCalendar } from "../../types/IcalCalendar";
 import type { IcalCalendarEvent } from "../../types/IcalCalendarEvent";
 import type { IcalCalendarNextEvent } from "../../types/IcalCalendarNextEvent";
+
+import { luxGetZonedDateTime } from "../luxon-fns.js";
 
 export const getNextEvent = (calendars: IcalCalendar[], timezone: string | undefined): IcalCalendarNextEvent | null => {
   let minutesUntilStart: number = 1057885015800000;

@@ -33,7 +33,9 @@ import type { IcalCalendarImport } from "./types/IcalCalendarImport";
     const data: CalendarResponse = calendar.options.isLocalFile ? nodeIcal.parseFile(calendar.uri) : await nodeIcal.fromURL(calendar.uri);
 
     if (showOnlyTheseUids.length > 0) {
-      const rawEvents: VEvent[] = Object.values(data).filter((ev: CalendarComponent) => ev.type === "VEVENT" && showOnlyTheseUids.includes(ev.uid)) as VEvent[];
+      const rawEvents: VEvent[] = Object.values(data).filter(
+        (ev: CalendarComponent) => ev.type === "VEVENT" && showOnlyTheseUids.includes(ev.uid)
+      ) as VEvent[];
       warn("Showing only raw events starting with these UIDs:", showOnlyTheseUids);
       console.log(rawEvents);
     } else {

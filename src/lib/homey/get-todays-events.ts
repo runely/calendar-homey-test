@@ -1,11 +1,11 @@
 import { DateTime } from "luxon";
 
-import { luxGetZonedDateTime } from "../luxon-fns.js";
-import { sortCalendarEvents } from "./sort-events.js";
-
 import type { Valid } from "luxon/src/_util";
 import type { IcalCalendar } from "../../types/IcalCalendar";
 import type { IcalCalendarEvent, IcalCalendarEventWithName } from "../../types/IcalCalendarEvent";
+
+import { luxGetZonedDateTime } from "../luxon-fns.js";
+import { sortCalendarEvents } from "./sort-events.js";
 
 export const getEventsToday = (calendars: IcalCalendar[], timezone: string | undefined): IcalCalendarEventWithName[] => {
   const eventsToday: IcalCalendarEventWithName[] = [];

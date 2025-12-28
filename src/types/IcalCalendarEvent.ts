@@ -1,6 +1,6 @@
-import type { DateType } from "node-ical";
 import type { DateTime } from "luxon";
 import type { Valid } from "luxon/src/_util";
+import type { DateType } from "node-ical";
 
 export type BusyStatus = "FREE" | "TENTATIVE" | "BUSY" | "OOF";
 

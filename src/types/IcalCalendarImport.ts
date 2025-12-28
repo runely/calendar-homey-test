@@ -72,5 +72,5 @@ export type IcalCalendarImport = {
     printEventByUIDs?: string[];
   };
   logProperties: IcalCalendarLogProperty[];
-  tz?: string;
+  tz: string;
 };

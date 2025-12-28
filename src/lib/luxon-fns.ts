@@ -87,41 +87,49 @@ export function luxGuessTimezone(): string {
 
 export function luxGetCorrectDateTime(options: GetCorrectDateTimeOptions): DateTime<Valid> {
   const isoString: string = options.dateWithTimeZone.toISOString().slice(0, -5);
-  
+
   if (options.fullDayEvent) {
     const fullDayCalDate = DateTime.fromJSDate(options.dateWithTimeZone, { zone: "utc" })
       .setZone(options.localTimeZone, { keepLocalTime: true })
       .startOf("day");
     if (!options.quiet) {
-      console.log(`luxGetCorrectDateTime: FULL-DAY - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' ::  dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => fullDayCalDate: '${fullDayCalDate.toISO()}' (tz: '${options.localTimeZone}')`);
+      console.log(
+        `luxGetCorrectDateTime: FULL-DAY - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' ::  dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => fullDayCalDate: '${fullDayCalDate.toISO()}' (tz: '${options.localTimeZone}')`
+      );
     }
 
     return fullDayCalDate as DateTime<Valid>;
   }
 
   if (!options.dateWithTimeZone.tz) {
-    const localTzCalDate: DateTimeMaybeValid = DateTime.fromFormat(isoString, "yyyy-MM-dd'T'HH:mm:ss",  { zone: options.localTimeZone });
+    const localTzCalDate: DateTimeMaybeValid = DateTime.fromFormat(isoString, "yyyy-MM-dd'T'HH:mm:ss", { zone: options.localTimeZone });
     if (!options.quiet) {
-      console.log(`luxGetCorrectDateTime: NON-TZ - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' ::  dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => localTzCalDate: '${localTzCalDate.toISO()}' (tz: '${options.localTimeZone}')`);
+      console.log(
+        `luxGetCorrectDateTime: NON-TZ - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' ::  dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => localTzCalDate: '${localTzCalDate.toISO()}' (tz: '${options.localTimeZone}')`
+      );
     }
 
     return localTzCalDate as DateTime<Valid>;
   }
 
   if (!options.keepOriginalZonedTime) {
-    const calDate: DateTimeMaybeValid = DateTime.fromFormat(isoString, "yyyy-MM-dd'T'HH:mm:ss", {zone: options.dateWithTimeZone.tz});
+    const calDate: DateTimeMaybeValid = DateTime.fromFormat(isoString, "yyyy-MM-dd'T'HH:mm:ss", { zone: options.dateWithTimeZone.tz });
     const localCalDate: DateTimeMaybeValid = calDate.setZone(options.localTimeZone);
     if (!options.quiet) {
-      console.log(`luxGetCorrectDateTime: TZ - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' :: dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => calDate: '${calDate}' => localDate: '${localCalDate.toISO()}' (tz: '${options.localTimeZone}')`);
+      console.log(
+        `luxGetCorrectDateTime: TZ - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' :: dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => calDate: '${calDate}' => localDate: '${localCalDate.toISO()}' (tz: '${options.localTimeZone}')`
+      );
     }
 
     return localCalDate as DateTime<Valid>;
   }
 
-  const originalZonedCalDate: DateTimeMaybeValid = DateTime.fromJSDate(options.dateWithTimeZone, { zone: options.dateWithTimeZone.tz })
+  const originalZonedCalDate: DateTimeMaybeValid = DateTime.fromJSDate(options.dateWithTimeZone, { zone: options.dateWithTimeZone.tz });
   const originalZonedLocalCalDate: DateTimeMaybeValid = originalZonedCalDate.setZone(options.localTimeZone);
   if (!options.quiet) {
-    console.log(`luxGetCorrectDateTime: TZ - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' :: dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => originalZonedCalDate: '${originalZonedCalDate}' => originalZonedLocalCalDate: '${originalZonedLocalCalDate.toISO()}' (tz: '${options.localTimeZone}')`);
+    console.log(
+      `luxGetCorrectDateTime: TZ - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' :: dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => originalZonedCalDate: '${originalZonedCalDate}' => originalZonedLocalCalDate: '${originalZonedLocalCalDate.toISO()}' (tz: '${options.localTimeZone}')`
+    );
   }
 
   return originalZonedLocalCalDate as DateTime<Valid>;

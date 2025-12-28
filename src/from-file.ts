@@ -27,7 +27,7 @@ const valInArr = (val: string, arr: string[]): boolean => {
   }
   info(`fromFile: Getting ${calendars.length} calendars\n`);
 
-  let timezone: string | undefined = undefined;
+  let timezone: string = "";
   const calendarsEvents: IcalCalendar[] = [];
 
   for await (const calendar of calendars) {
@@ -42,7 +42,9 @@ const valInArr = (val: string, arr: string[]): boolean => {
       continue;
     }
 
-    timezone ??= calendar.tz;
+    if (timezone === "") {
+      timezone = calendar.tz;
+    }
 
     calendarsEvents.push(calendarEvents);
     if (calendar.options.showMeetingUrls) {

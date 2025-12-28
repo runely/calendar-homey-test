@@ -32,7 +32,7 @@
     "calendars-and-next-event": "npm run build && env TZ=UTC node --enable-source-maps dist/from-file.js nextEvent",
     "calendars-and-todays-events": "npm run build && env TZ=UTC node --enable-source-maps dist/from-file.js eventsToday",
     "calendars-and-tomorrows-events": "npm run build && env TZ=UTC node --enable-source-maps dist/from-file.js eventsTomorrow",
-    "test": "biome check",
+    "test": "biome check && tsc --noEmit",
     "fix": "biome check --write"
   }
 }

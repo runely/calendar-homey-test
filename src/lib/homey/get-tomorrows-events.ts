@@ -1,15 +1,17 @@
 import { DateTime } from "luxon";
 
-import { luxGetZonedDateTime } from "../luxon-fns.js";
-import { sortCalendarEvents } from "./sort-events.js";
-
 import type { Valid } from "luxon/src/_util";
 import type { IcalCalendar } from "../../types/IcalCalendar";
 import type { IcalCalendarEvent, IcalCalendarEventWithName } from "../../types/IcalCalendarEvent";
 
+import { luxGetZonedDateTime } from "../luxon-fns.js";
+import { sortCalendarEvents } from "./sort-events.js";
+
 export const getEventsTomorrow = (calendars: IcalCalendar[], timezone: string | undefined): IcalCalendarEventWithName[] => {
   const eventsTomorrow: IcalCalendarEventWithName[] = [];
-  const tomorrowStart: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), timezone || "UTC").plus({ day: 1 }).startOf("day"); // TODO: should timezone be local and not UTC?
+  const tomorrowStart: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), timezone || "UTC")
+    .plus({ day: 1 })
+    .startOf("day"); // TODO: should timezone be local and not UTC?
 
   calendars.forEach((calendar: IcalCalendar) => {
     calendar.events.forEach((event: IcalCalendarEvent) => {
