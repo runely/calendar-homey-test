@@ -1,19 +1,21 @@
-import type { Dayjs } from "dayjs";
+import { DateTime } from "luxon";
+
+import { luxGetZonedDateTime } from "../luxon-fns.js";
+import { sortCalendarEvents } from "./sort-events.js";
+
+import type { Valid } from "luxon/src/_util";
 import type { IcalCalendar } from "../../types/IcalCalendar";
 import type { IcalCalendarEvent, IcalCalendarEventWithName } from "../../types/IcalCalendarEvent";
-import { dayjsIfy } from "../dayjs-fns.js";
-
-import { sortCalendarEvents } from "./sort-events.js";
 
 export const getEventsTomorrow = (calendars: IcalCalendar[], timezone: string | undefined): IcalCalendarEventWithName[] => {
   const eventsTomorrow: IcalCalendarEventWithName[] = [];
-  const tomorrowStart: Dayjs = dayjsIfy(new Date(), timezone).add(1, "day").startOf("day");
+  const tomorrowStart: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), timezone || "UTC").plus({ day: 1 }).startOf("day"); // TODO: should timezone be local and not UTC?
 
   calendars.forEach((calendar: IcalCalendar) => {
     calendar.events.forEach((event: IcalCalendarEvent) => {
-      const startDiff: number = tomorrowStart.diff(event.start);
-      const endDiff: number = tomorrowStart.diff(event.end);
-      const startIsSameDay: boolean = event.start.isSame(tomorrowStart, "day");
+      const startDiff: number = tomorrowStart.diff(event.start).milliseconds;
+      const endDiff: number = tomorrowStart.diff(event.end).milliseconds;
+      const startIsSameDay: boolean = event.start.hasSame(tomorrowStart, "day");
 
       const tomorrowNotStartedYet: boolean = startDiff < 0 && startIsSameDay;
       const startPastButNotStopped: boolean = startDiff > 0 && !startIsSameDay && endDiff < 0;

@@ -1,19 +1,19 @@
-import type { Dayjs } from "dayjs";
 import type { DateType } from "node-ical";
+import type { DateTime } from "luxon";
+import type { Valid } from "luxon/src/_util";
 
 export type BusyStatus = "FREE" | "TENTATIVE" | "BUSY" | "OOF";
 
 export type IcalCalendarEvent = {
-  start: Dayjs;
-  datetype: DateType;
-  end: Dayjs;
+  start: DateTime<Valid>;
+  dateType: DateType;
+  end: DateTime<Valid>;
   uid: string;
   description: string;
   location: string;
   summary: string;
   fullDayEvent: boolean;
-  skipTZ: boolean;
-  freebusy?: BusyStatus;
+  freeBusy?: BusyStatus;
   meetingUrl?: string;
 };
 

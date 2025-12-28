@@ -19,7 +19,7 @@ const valInArr = (val: string, arr: string[]): boolean => {
 
   const scriptStart: number = Date.now();
 
-  const calendars: IcalCalendarImport[] = getCalendars();
+  const calendars: IcalCalendarImport[] = await getCalendars();
 
   if (calendars.length === 0) {
     info("getEvents: Add at least one calendar in calendar.json");
@@ -27,7 +27,7 @@ const valInArr = (val: string, arr: string[]): boolean => {
   }
   info(`fromFile: Getting ${calendars.length} calendars\n`);
 
-  let timezone: string | undefined;
+  let timezone: string | undefined = undefined;
   const calendarsEvents: IcalCalendar[] = [];
 
   for await (const calendar of calendars) {

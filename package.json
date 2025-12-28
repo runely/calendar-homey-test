@@ -12,27 +12,26 @@
   "license": "ISC",
   "dependencies": {
     "chalk": "4.1.2",
-    "dayjs": "^1.11.19",
     "lodash.clonedeep": "4.5.0",
-    "node-ical": "^0.22.1",
-    "yargs": "^18.0.0"
+    "luxon": "^3.7.2",
+    "node-ical": "^0.22.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.5",
     "@types/chalk": "^0.4.31",
+    "@types/lodash.clonedeep": "^4.5.9",
+    "@types/luxon": "^3.7.1",
     "@types/node": "^24.10.0",
-    "@types/yargs": "^17.0.34",
-    "moment-timezone": "^0.6.0",
     "typescript": "^5.9.3"
   },
   "scripts": {
     "build": "tsc",
     "refresh": "rm -rf node_modules/ && rm package-lock.json && npm i",
-    "calendars": "npm run build && env TZ=UTC node dist/from-file.js",
-    "raw": "npm run build && env TZ=UTC node dist/raw.js",
-    "calendars-and-next-event": "npm run build && env TZ=UTC node dist/from-file.js nextEvent",
-    "calendars-and-todays-events": "npm run build && env TZ=UTC node dist/from-file.js eventsToday",
-    "calendars-and-tomorrows-events": "npm run build && env TZ=UTC node dist/from-file.js eventsTomorrow",
+    "calendars": "npm run build && env TZ=UTC node --enable-source-maps dist/from-file.js",
+    "raw": "npm run build && env TZ=UTC node --enable-source-maps dist/raw.js",
+    "calendars-and-next-event": "npm run build && env TZ=UTC node --enable-source-maps dist/from-file.js nextEvent",
+    "calendars-and-todays-events": "npm run build && env TZ=UTC node --enable-source-maps dist/from-file.js eventsToday",
+    "calendars-and-tomorrows-events": "npm run build && env TZ=UTC node --enable-source-maps dist/from-file.js eventsTomorrow",
     "test": "biome check",
     "fix": "biome check --write"
   }

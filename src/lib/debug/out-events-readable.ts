@@ -1,6 +1,5 @@
-import type { VEvent } from "node-ical";
+/*import type { VEvent } from "node-ical";
 import { debug } from "../../config.js";
-import { dayjsIfy } from "../dayjs-fns.js";
 
 const printOut = (event: VEvent, properties: string[] = []): void => {
   let outString: string = `\t'${event.summary}' :: '${dayjsIfy(event.start).format("DD.MM.YYYY HH:mm:ss")}' -> '${dayjsIfy(event.end).format("DD.MM.YYYY HH:mm:ss")}'`;
@@ -20,4 +19,4 @@ export const printOutEventsReadable = (events: VEvent[], message: string, proper
   events.forEach((event: VEvent) => {
     printOut(event, properties);
   });
-};
+};*/

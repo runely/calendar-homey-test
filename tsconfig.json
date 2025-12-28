@@ -31,6 +31,7 @@
     "noPropertyAccessFromIndexSignature": true,
 
     // Recommended Options
+    "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "strict": true,

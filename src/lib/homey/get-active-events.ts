@@ -1,67 +1,29 @@
-/*const { dayjsIfy, getGuessedTimezone, toIsoString } = require('../dayjs-fns')
-const deepClone = require('lodash.clonedeep')
-const { debug, warn } = require('../../config')
-const getRegularEventEnd = require('./find-regular-event-end')
-const hasData = require('./has-data')
-const extractMeetingUrl = require('./extract-meeting-url')*/
+import deepClone from "lodash.clonedeep";
+import { DateTime, type DateTimeMaybeValid, Duration } from "luxon";
+import type { Valid } from "luxon/src/_util";
+import type { CalendarComponent, CalendarResponse, DateWithTimeZone, VEvent } from "node-ical";
 
-// const outputEvent = require('../debug/out-events-readable');
-
-import type { Dayjs } from "dayjs";
-
-//import deepClone from 'lodash.clonedeep';
-
-/*import { findRegularEventEnd } from './find-regular-event-end.js';
-import { hasData } from "./has-data.js";
-import { extractMeetingUrl } from "./extract-meeting-url.js";*/
-import type { /*CalendarComponent,*/ CalendarResponse /*DateWithTimeZone, VEvent*/ } from "node-ical";
-import { debug /*, warn*/ } from "../../config.js";
-import type { IcalCalendarEvent } from "../../types/IcalCalendarEvent";
+import type { IcalOccurence } from "../../types/IcalCalendar";
+import type { BusyStatus, IcalCalendarEvent } from "../../types/IcalCalendarEvent";
 import type { IcalCalendarEventLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport";
-import { dayjsIfy, getGuessedTimezone, toIsoString } from "../dayjs-fns.js";
-//import { printOutEventsReadable } from '../debug/out-events-readable.js';
 
-/*const test = (summary: string, start: Dayjs, end: Dayjs, recurring: boolean = false, timezone: string | undefined, ...rest: unknown[]): void => {
-  // TODO: Might need to add format to start and end
-  debug(`Type: '${!recurring ? 'Regular' : 'Recurring'}' -- Summary: '${summary}' -- Start: '${start}' (${toIsoString(start)}) -- End: '${end}' (${toIsoString(end)}) -- Timezone: '${timezone}' `, ...rest);
+import { extractFreeBusy } from "./extract-freebusy.js";
+import { extractMeetingUrl } from "./extract-meeting-url.js";
+import { luxGuessTimezone, luxGetZonedDateTime, luxStartOf, luxGetCorrectDateTime } from "../luxon-fns.js";
+import { debug, warn } from "../../config.js";
+
+const untilRegexp = new RegExp("UNTIL=(\\d{8}T\\d{6})");
+
+const createDateWithTimeZone = (date: Date, timeZone: string | undefined): DateWithTimeZone => {
+  return Object.defineProperty(date, 'tz', {
+    value: timeZone,
+    enumerable: false,
+    configurable: true,
+    writable: false,
+  }) as DateWithTimeZone;
 }
 
-const getDuration = (start: DateWithTimeZone, end: DateWithTimeZone): number => {
-  return Number.parseInt(dayjsIfy(end).format("x")) - Number.parseInt(dayjsIfy(start).format('x'));
-}
-
-const getEnd = (start: Dayjs | Date, duration: number, timezone: string | undefined): Dayjs => {
-  const startPlusDuration: number = Number.parseInt(dayjsIfy(start).format("x")) + duration;
-  return dayjsIfy(startPlusDuration, timezone)
-  //timezone ? moment.tz((Number.parseInt(moment(start).format('x')) + duration), 'x', timezone) : moment((Number.parseInt(moment(start).format('x')) + duration), 'x')
-}
-
-const getPaddedDateString = (date: Dayjs): string => {
-  const dateParts: string[] = [
-    `${date.get('years')}`,
-    date.get('months') + 1 > 9
-      ? `${date.get('months') + 1}`
-      : `0${date.get('months') + 1}`,
-    date.get('dates') > 9
-      ? `${date.get('dates')}`
-      : `0${date.get('dates')}`
-  ];
-  const timeParts: string[] = [
-    date.get('hours') > 9
-      ? `${date.get('hours')}`
-      : `0${date.get('hours')}`,
-    date.get('minutes') > 9
-      ? `${date.get('minutes')}`
-      : `0${date.get('minutes')}`,
-    date.get('seconds') > 9
-      ? `${date.get('seconds')}`
-      : `0${date.get('seconds')}`
-  ];
-
-  return `${dateParts.join('-')}T${timeParts.join(':')}.000Z`;
-}
-
-const convertToText = (prop: string, value: { params: unknown, val: string } | string, uid: string) => {
+const convertToText = (prop: string, value: { params: unknown, val: string } | string, uid: string): string => {
   if (typeof value === 'object') {
     debug(`getActiveEvents/convertToText - '${prop}' was object. Using 'val' of object '${uid}'`);
     return value.val;
@@ -70,426 +32,313 @@ const convertToText = (prop: string, value: { params: unknown, val: string } | s
   return value;
 }
 
-const isInvalidTZ = (tz: string | undefined): boolean => {
-  const invalid: string[] = ['Customized Time Zone', 'undefined'];
-  if (tz === undefined) {
-    return false;
+const createCalendarEvent = (event: VEvent, start: DateTime<Valid>, end: DateTime<Valid>): IcalCalendarEvent => {
+  // dig out free/busy status (if any)
+  const freeBusy: BusyStatus | undefined = extractFreeBusy(event);
+
+  // dig out a meeting url (if any)
+  const meetingUrl = extractMeetingUrl(event) || ''
+
+  const calendarEvent: IcalCalendarEvent = {
+    start,
+    dateType: event.datetype,
+    end,
+    uid: event.uid,
+    description: event.description,
+    location: event.location,
+    summary: event.summary,
+    fullDayEvent: event.datetype === "date"
+  };
+
+  if (freeBusy) {
+    calendarEvent.freeBusy = freeBusy;
   }
 
-  return invalid.map((i: string) => tz.includes(i)).includes(true)
+  if (meetingUrl) {
+    calendarEvent.meetingUrl = meetingUrl;
+  }
+
+  return calendarEvent;
 }
 
-const removeInvalidTZ = (event: VEvent): void => {
-  // remove 'Customized Time Zone*'
-  try {
-    if (isInvalidTZ(event.start.tz)) {
-      console.log(`Invalid timezone (${event.start.tz}) found on`, event.summary);
-      delete event.start.tz
-      delete event.end.tz
-      event.skipTZ = true
+const filterOutUnwantedEvents = (events: CalendarComponent[], eventLimitStart: DateTime<Valid>, eventLimitEnd: DateTime<Valid>): VEvent[] => {
+  const eventLimitStartMillis: number = eventLimitStart.toUTC().toJSDate().getTime();
+  const eventLimitEndMillis: number = eventLimitEnd.toUTC().toJSDate().getTime();
+
+  // statistics only
+  let nonVEvents: number = 0;
+  let regularVEventsPast: number = 0;
+  let regularVEventsInside: number = 0;
+  let recurringVEventsWithoutUntil: number = 0;
+  let recurringVEventsWithPastUntil: number = 0;
+  let recurringVEventsWithFutureUntil: number = 0;
+  
+  const filteredEvents: VEvent[] = events.filter((event: CalendarComponent) => {
+    // Needed to let TypeScript know that event is of type VEvent
+    if (event.type !== "VEVENT") {
+      nonVEvents++;
+      return false;
     }
 
-    if (event.start.tz === 'Africa/Abidjan' && event.dtstamp.tz === 'Etc/UTC') {
-      console.log(`Invalid timezone (${event.start.tz}) (this was probably Customized Time Zone) found on`, event.summary, event.uid)
-      delete event.start.tz
-      delete event.end.tz
-      event.skipTZ = true
+    if (!event.rrule) {
+      const startMillis: number = event.start.getTime();
+      const endMillis: number = event.end.getTime();
+      const isRegularEventInside: boolean = (startMillis >= eventLimitStartMillis && endMillis <= eventLimitEndMillis) // event fully inside range
+        || (startMillis <= eventLimitStartMillis && endMillis >= eventLimitEndMillis) // event fully outside range (ongoing)
+        || (startMillis <= eventLimitStartMillis && endMillis > eventLimitStartMillis) // event starting before range, ending after start limit (ongoing)
+        || (startMillis >= eventLimitStartMillis && startMillis < eventLimitEndMillis && endMillis >= eventLimitEndMillis); // event starting inside range, ending after range (ongoing)
+      if (isRegularEventInside) {
+        regularVEventsInside++;
+      } else {
+        regularVEventsPast++;
+      }
+      return isRegularEventInside;
     }
 
-    if (event.exdate) {
-      for (const exdate in event.exdate) {
-        if (isInvalidTZ(event.exdate[exdate].tz)) {
-          delete event.exdate[exdate].tz
-          delete event.exdate[exdate].tz
-        }
-      }
+    const untilMatch: RegExpExecArray | null = untilRegexp.exec(event.rrule.toString());
+    if (!untilMatch || untilMatch.length < 2) {
+      recurringVEventsWithoutUntil++;
+      return true;
     }
 
-    if (event.rrule) {
-      if (event.rrule.origOptions && isInvalidTZ(event.rrule.origOptions.tzid)) {
-        delete event.rrule.origOptions.tzid
-        delete event.rrule.origOptions.tzid
-      }
-
-      if (event.rrule.options && isInvalidTZ(event.rrule.options.tzid)) {
-        delete event.rrule.options.tzid
-        delete event.rrule.options.tzid
-      }
-
-      if (event.rrule.origOptions.tzid === undefined && event.rrule.options.tzid === undefined) {
-        event.skipTZ = true
-      }
-    } else if (event.start.tz === undefined) {
-      event.skipTZ = true
+    const untilString: string | undefined = untilMatch[1];
+    if (!untilString) {
+      warn(`filterOutUnwantedEvents: UNTIL string extraction failed for event UID '${event.uid}'. Skipping event.`);
+      recurringVEventsWithoutUntil++;
+      return false;
     }
-  } catch (error) {
-    console.log('Failed to remove invalid time zone:', error)
-  }
+
+    const untilDateTime: DateTimeMaybeValid = DateTime.fromFormat(untilString, "yyyyMMdd'T'HHmmss", { zone: "utc" });
+    if (!untilDateTime.isValid) {
+      warn(`filterOutUnwantedEvents: UNTIL date parsing failed for event UID '${event.uid}'. Skipping event. Reason: ${untilDateTime.invalidReason}`);
+      recurringVEventsWithoutUntil++;
+      return false;
+    }
+
+    // keep only events where untilDateTime is after now
+    const untilMillis: number = (untilDateTime as DateTime<Valid>).toMillis();
+    const isRecurringUntilFuture: boolean = (untilMillis > eventLimitStartMillis && untilMillis >= eventLimitEndMillis) || (untilMillis > eventLimitStartMillis && untilMillis <= eventLimitEndMillis);
+    if (isRecurringUntilFuture) {
+      recurringVEventsWithFutureUntil++;
+    } else {
+      recurringVEventsWithPastUntil++;
+    }
+    return isRecurringUntilFuture;
+  }) as VEvent[];
+  
+  debug(`filterOutUnwantedEvents: Filtered out events numbers -- nonVEvents: ${nonVEvents} -- regularVEventsPast: ${regularVEventsPast} -- recurringVEventsWithPastUntil: ${recurringVEventsWithPastUntil} -- recurringVEventsWithoutUntil: ${recurringVEventsWithoutUntil} -- regularVEventsInside: ${regularVEventsInside} -- recurringVEventsWithFutureUntil: ${recurringVEventsWithFutureUntil}. Totally filtered from ${events.length} to ${filteredEvents.length} events.`);
+  
+  return filteredEvents;
 }
 
-const fixWholeDayExDates = (event: VEvent): void => {
-  const eventKeys: string[] = Object.keys(event);
-  if (!eventKeys.includes('MICROSOFT-CDO-ALLDAYEVENT') || ('MICROSOFT-CDO-ALLDAYEVENT' in event && (event['MICROSOFT-CDO-ALLDAYEVENT'] as string).toLowerCase() !== 'true')) {
-    return;
+const getRecurrenceDates = (event: VEvent, eventLimitStart: DateTime<Valid>, eventLimitEnd: DateTime<Valid>, localTimeZone: string): IcalOccurence[] => {
+  const instances = new Map<string, IcalOccurence>();
+
+  for (const date of event.rrule!.between(eventLimitStart.toJSDate(), eventLimitEnd.toJSDate(), true)) {
+    const occurence: DateTime<Valid> = luxGetCorrectDateTime({
+      dateWithTimeZone: createDateWithTimeZone(date, event.rrule?.options.tzid || event.start.tz || undefined),
+      localTimeZone: localTimeZone,
+      fullDayEvent: event.datetype === "date",
+      keepOriginalZonedTime: true,
+      quiet: false
+    });
+
+    const occurenceUtc: DateTime<Valid> = occurence.toUTC();
+    const occurenceStamp: string = occurenceUtc.toISO();
+    const lookupKey: string = occurenceUtc.toISODate();
+    if (event.recurrences && event.recurrences[lookupKey]) {
+      warn(`getRecurrenceDates: Recurrence override found for event UID '${event.uid}' on date '${lookupKey}'. Skipping occurrence.`);
+      continue;
+    }
+
+    if (instances.has(occurenceStamp)) {
+      warn(`getRecurrenceDates: Duplicate occurrence found for event UID '${event.uid}' on date '${lookupKey}'. Skipping duplicate.`);
+      continue;
+    }
+
+    instances.set(occurenceStamp, {
+      occurenceStart: occurence,
+      lookupKey
+    });
   }
 
-  if (!eventKeys.includes('exdate')) {
-    return;
+  if (event.recurrences) {
+    for (const recurrence of Object.values(event.recurrences)) {
+      const recurStart: DateTime<Valid> | null = recurrence?.start instanceof Date
+        ? luxGetCorrectDateTime({
+            dateWithTimeZone: createDateWithTimeZone(recurrence.start, recurrence.start.tz || undefined),
+            localTimeZone: localTimeZone,
+            fullDayEvent: event.datetype === "date",
+            keepOriginalZonedTime: true,
+            quiet: false
+          })
+        : null;
+
+      const recurId: DateTimeMaybeValid | null = recurrence?.recurrenceid instanceof Date
+        ? DateTime.fromJSDate(recurrence.recurrenceid)
+        : null;
+
+      if (!recurStart || !recurId || !recurId.isValid) {
+        warn(`getRecurrenceDates: Invalid recurrence or recurrenceid found for event UID '${event.uid}'. Skipping this recurrence.`);
+        continue;
+      }
+
+      if (!(recurStart.toMillis() >= eventLimitStart.toMillis() && recurStart.toMillis() <= eventLimitEnd.toMillis())) {
+        continue;
+      }
+
+      const recurUtc: DateTimeMaybeValid = recurStart.toUTC();
+      const recurStamp: string = recurUtc.toISO();
+      instances.set(recurStamp, {
+        occurenceStart: recurStart,
+        lookupKey: recurUtc.toISODate()
+      });
+    }
   }
 
-  const newExDate: Date[] = [];
-  warn(`Fixing whole day Microsoft Exchange 365 recurring exdate for UID=${event.uid}:`);
-  for (const exDateKey of Object.keys(event.exdate)) {
-    const exDateEntry: any = event.exdate[exDateKey];
-    const correctDayJs: Dayjs = dayjsIfy(exDateEntry, exDateEntry.tz);
-    const correctISO: string = toIsoString(correctDayJs);
-    const correctDate: string = correctISO.slice(0, 10);
-    newExDate[correctDate] = new Date(correctISO.slice(0, 23));
-    warn(`'${exDateEntry.tz}' : '${exDateEntry}' <--> '${newExDate[correctDate]}'`)
-  }
-
-  event.exdate = newExDate
-}*/
+  return Array
+    .from(instances.values())
+    .sort((a: IcalOccurence, b: IcalOccurence) => a.occurenceStart.toMillis() - b.occurenceStart.toMillis());
+}
 
 export const getActiveEvents = (
   timezone: string | undefined,
   data: CalendarResponse,
   eventLimit: IcalCalendarEventLimit,
-  logProperties: IcalCalendarLogProperty[],
-  extrasUIDs?: string[]
+  logProperties: IcalCalendarLogProperty[]
 ): IcalCalendarEvent[] => {
-  const usedTZ: string = timezone || getGuessedTimezone();
-  //const now: Dayjs = dayjsIfy(new Date(), usedTZ);
-  const eventLimitStart: Dayjs = dayjsIfy(new Date(), usedTZ).startOf("day");
-  const eventLimitEnd: Dayjs = dayjsIfy(new Date(), usedTZ).endOf("day").add(eventLimit.value, eventLimit.type);
-  //const events: IcalCalendarEvent[] = [];
+  const usedTZ: string = timezone || luxGuessTimezone();
+  const now: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), usedTZ); //.plus({ day: -10 });
+  const eventLimitStart: DateTime<Valid> = luxStartOf(luxGetZonedDateTime(DateTime.local(), usedTZ), "day"); //.plus({ day: -10 });
+
+  const eventLimitDuration: Duration = Duration.fromObject({ [eventLimit.type]: eventLimit.value });
+  const eventLimitEnd: DateTime<Valid> = DateTime.local().endOf("day").plus(eventLimitDuration); //.plus({ day: -10 });
+  const events: IcalCalendarEvent[] = [];
   let recurrenceEventCount: number = 0;
   let regularEventCount: number = 0;
 
   debug(
-    `get-active-events: Using timezone '${usedTZ}' -- Event limit start: '${eventLimitStart.format("LLLL")}' -- Event limit end: '${eventLimitEnd.format("LLLL")}' -- logPropertiesCount: ${logProperties.length} -- extrasUIDsCount: ${Array.isArray(extrasUIDs) ? extrasUIDs.length : 0}`
+    `get-active-events: Using timezone '${usedTZ}' -- Now: '${now.toFormat("dd.MM.yyyy HH:mm:ss")}' -- Event limit start: '${eventLimitStart.toFormat("dd.MM.yyyy HH:mm:ss")}' -- Event limit end: '${eventLimitEnd.toFormat("dd.MM.yyyy HH:mm:ss")}' -- logPropertiesCount: ${logProperties.length}`
   );
 
-  for (const event of Object.values(data)) {
-    if (event.type !== "VEVENT") {
-      continue;
-    }
-
+  const actualEvents: VEvent[] = filterOutUnwantedEvents(Object.values(data), eventLimitStart, eventLimitEnd);
+  for (const event of actualEvents) {
     if (event.recurrenceid) {
-      debug(`We don't care about recurrenceid for now`);
+      // TODO: Fix handling of recurrenceid events
+      warn(`We don't care about recurrenceid for now (${event.uid})`);
+      debug(`Recurrence override start/end. Summary: '${event.summary}'`);
       continue;
     }
 
-    const startDate: Dayjs = dayjsIfy(event.start);
-    const endDate: Dayjs = dayjsIfy(event.end);
-
-    if (!event.rrule) {
-      // Regular event
-      regularEventCount++;
-      if (endDate.isBefore(eventLimitEnd) || startDate.isAfter(eventLimitEnd)) {
-        continue;
-      }
-
-      debug(
-        `Title: '${event.summary}' -- Start: '${startDate.format("LLLL")}' (ISO:${toIsoString(startDate)}) -- End: '${endDate.format("LLLL")}' (ISO:${toIsoString(endDate)})`
-      );
-      continue;
-    }
-
-    // Recurring event
-    recurrenceEventCount++;
-  }
-
-  debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`);
-
-  return [];
-
-  /*for (const event of Object.values(data)) {
-    if (event.type !== 'VEVENT') {
-      continue;
-    }
-
-    // stop if required properties are missing
-    if (!hasData(event.start) || !hasData(event.end)) {
-      throw new Error(`"DTSTART" and/or "DTEND" is missing in event with UID: ${event.uid}`)
-    }
-
-    // set properties to be text value IF it's an object: https://github.com/jens-maus/node-ical/blob/cbb76af87ff6405f394acf993889742885cce0a0/ical.js#L78
+    // set properties to be text value IF it's an object
     event.summary = convertToText('summary', event.summary, event.uid);
     event.location = convertToText('location', event.location, event.uid);
     event.description = convertToText('description', event.description, event.uid);
     event.uid = convertToText('uid', event.uid, event.uid);
 
-    // remove invalid timezones from event
-    //removeInvalidTZ(event)
+    const startDate: DateTime<Valid> = luxGetCorrectDateTime({ dateWithTimeZone: event.start, localTimeZone: usedTZ, fullDayEvent: event.datetype === "date", keepOriginalZonedTime: false, quiet: true });
+    const endDate: DateTime<Valid> = luxGetCorrectDateTime({ dateWithTimeZone: event.end, localTimeZone: usedTZ, fullDayEvent: event.datetype === "date", keepOriginalZonedTime: false, quiet: true });
 
-    if (typeof event.rrule === 'undefined') 
-      // regular event
-      try {
-        const skipTZ = event.skipTZ || event.start.toUTCString().includes('00:00:00')
-        const start = skipTZ ? moment(event.start) : moment.tz(event.start, usedTZ)
-        const end = skipTZ ? getRegularEventEnd(event) : getRegularEventEnd(event, usedTZ)
-        if (Array.isArray(extrasUIDs) && extrasUIDs.includes(event.uid)) {
-          if (skipTZ) {
-            console.log('Start created without timezone', start, start.get('hours'), start.toDate().getHours())
-            console.log('End created without timezone', end, end.get('hours'), end.toDate().getHours())
-          } else {
-            console.log(`Start created with timezone '${usedTZ}'`, start, start.get('hours'), start.toDate().getHours())
-            console.log(`End created with timezone '${usedTZ}'`, end, end.get('hours'), end.toDate().getHours())
-          }
+    if (event.rrule) {
+      // Recurring event
+      debug(`Recurrence start. Summary: '${event.summary}'`)
+
+      let logged: boolean = false;
+      const recurrenceDates: IcalOccurence[] = getRecurrenceDates(event, eventLimitStart, eventLimitEnd, usedTZ);
+      for (const { occurenceStart, lookupKey } of recurrenceDates) {
+        let currentEvent: VEvent = deepClone(event);
+        let currentDuration: Duration<true> = endDate.diff(startDate);
+
+        let currentStartDate: DateTime<Valid> = occurenceStart;
+
+        if (currentEvent.recurrences && currentEvent.recurrences[lookupKey]) {
+          // we found an override, so for this recurrence, use a potentially different start/end
+          currentEvent = currentEvent.recurrences[lookupKey] as VEvent;
+          warn(`Found recurrence override for event UID '${event.uid}' on date '${lookupKey}'. Using overridden start/end.`);
+
+          currentStartDate = luxGetCorrectDateTime({
+            dateWithTimeZone: createDateWithTimeZone(currentEvent.start, currentEvent.start.tz || undefined),
+            localTimeZone: usedTZ,
+            fullDayEvent: event.datetype === "date",
+            keepOriginalZonedTime: false,
+            quiet: true
+          });
+
+          const overrideEndDate: DateTime<Valid> = luxGetCorrectDateTime({
+            dateWithTimeZone: createDateWithTimeZone(currentEvent.end, currentEvent.end.tz || undefined),
+            localTimeZone: usedTZ,
+            fullDayEvent: event.datetype === "date",
+            keepOriginalZonedTime: false,
+            quiet: true
+          });
+
+          currentDuration = overrideEndDate.diff(currentStartDate);
+        } else if (currentEvent.exdate && currentEvent.exdate[lookupKey]) {
+          warn(`ExDate found for event UID '${event.uid}' on date '${lookupKey}'. Skipping this recurrence.`);
+          continue;
         }
 
-        // only add event if
-        //    end hasn't happened yet AND start is between eventLimitStart and eventLimitEnd
-        // ||
-        //    start has happened AND end hasn't happened yet (ongoing)
-        if ((now.diff(end, 'seconds') < 0 && start.isBetween(eventLimitStart, eventLimitEnd) === true) // ongoing event
-            || (now.diff(start, 'seconds') > 0 && now.diff(end, 'seconds') < 0)) { // not started event
-          events.push({ ...event, start, end })
-          logProperties.forEach(prop => {
+        const currentEndDate: DateTime<Valid> = currentStartDate.plus(currentDuration);
+
+        if (currentEndDate.toMillis() < eventLimitStart.toMillis() || currentStartDate.toMillis() > eventLimitEnd.toMillis()) {
+          warn(`Skipping recurrence for event UID '${event.uid}' on date '${lookupKey}' as it is outside event limits.`);
+          continue;
+        }
+
+        recurrenceEventCount++;
+
+        if (!logged && Array.isArray(logProperties) && logProperties.length > 0) {
+          logProperties.forEach((prop: IcalCalendarLogProperty) => {
             if (prop === 'event') {
-              console.log(prop.toUpperCase(), `for '${event.summary}' :`, event)
+              console.log(prop.toUpperCase(), `for '${event.summary}' :`, currentEvent);
             } else {
-              console.log(prop.toUpperCase(), `in '${event.summary}' :`, event[prop])
+              // @ts-expect-error
+              console.log(prop.toUpperCase(), `in '${event.summary}' :`, currentEvent[prop]);
             }
-          })
-          test(event.summary, start, end, (typeof event.rrule !== 'undefined'), usedTZ, 'offset: ', end.utcOffset())
-          regularEventCount++
+          });
+          logged = true;
         }
-      } catch (_err) {
-        console.log(`Regular -- Something weird on event '${event.summary}':`, event, 'ERROR ::', _err)
+
+        console.log('Start:', currentEvent.start.toISOString(), currentEvent.start.tz, "-- Converted:", currentStartDate.toISO(), currentStartDate.zoneName);
+        console.log('End:', currentEvent.end.toISOString(), currentEvent.start.tz, "-- Converted:", currentEndDate.toISO(), currentEndDate.zoneName);
+
+        currentEvent.uid = `${currentEvent.uid}_${currentStartDate.toISO().slice(0, 10)}`
+
+        debug(
+          `Recurrence Summary: '${currentEvent.summary}' -- Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' -- End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' -- UID: '${currentEvent.uid}'`
+        );
+        events.push(createCalendarEvent(currentEvent, currentStartDate, currentEndDate));
       }
 
+      debug(`Recurrence end. Summary: '${event.summary}'`)
       continue;
     }
 
-    // recurring event
-    try {
-      // getting the set of start dates between eventLimitStart and eventLimitEnd
-      //      Include dates which falls on until date: true||false
-      let dates = event.rrule.between(eventLimitStart.toDate(), eventLimitEnd.toDate(), true)
+    debug(`Summary start: '${event.summary}'`)
 
-      // getting the set of dates between rrule start and rrule until (if until is null, use eventLimitEnd.toDate())
-      //      Include dates which falls on until date: true||false
-      const rruleStart = (event.rrule.options && event.rrule.options.dtstart && moment.tz(event.rrule.options.dtstart, event.rrule.options.tzid || usedTZ).startOf('day').toDate()) || eventLimitStart.toDate()
-      const rruleEnd = (event.rrule.options && event.rrule.options.until && moment.tz(event.rrule.options.until, event.rrule.options.tzid || usedTZ).endOf('day').toDate()) || eventLimitEnd.toDate()
-      // first get all dates between start and end. then filter only those where date isn't after eventLimitEnd and isn't already present in dates
-      const ongoingDates = event.rrule.between(rruleStart, rruleEnd, true).filter(date => !moment(date).isAfter(eventLimitEnd.toDate()) && !dates.map(d => d.getTime() === date.getTime()).includes(true))
-      ongoingDates.forEach(date => dates.push(date))
+    regularEventCount++;
 
-      // the "dates" array contains the set of dates within our desired date range that are valid
-      // for the recurrence rule.  *However*, it's possible for us to have a specific recurrence that
-      // had its date changed from outside the range to inside the range. One way to handle this is
-      // to add *all* recurrence override entries into the set of dates that we check, and then later
-      // filter out any recurrences that don't actually belong within our range.
-      let recurrencesMoved = []
-      if (event.recurrences !== undefined) {
-        for (const r of Object.keys(event.recurrences)) {
-          const recurrence = event.recurrences[r]
-
-          // remove the original date since this date has been moved
-          const rMomentRecurr = recurrence.recurrenceid.toUTCString().includes('00:00:00') ? moment(recurrence.recurrenceid) : moment.tz(recurrence.recurrenceid, usedTZ)
-          const rDateRecurr = new Date(getPaddedDateString(rMomentRecurr))
-          const newDates = []
-          let movedRecurrencesAdded = 0
-          dates.forEach(date => {
-            const date2 = rDateRecurr
-            date2.setHours(date.getHours())
-            date2.setMinutes(date.getMinutes())
-            date2.setSeconds(date.getSeconds())
-            date2.setMilliseconds(date.getMilliseconds())
-            if (date.toISOString() !== date2.toISOString()) {
-              newDates.push(date)
-            } else {
-              // keep track of the original date that has been moved so we can find it back further down
-              recurrencesMoved.push({
-                original: date
-              })
-              movedRecurrencesAdded++
-            }
-          })
-          dates = newDates
-
-          // add the new date
-          // also only add dates that weren't already in the range we added from the rrule so that we don't double-add those events.
-          const rMomentStart = recurrence.start.toUTCString().includes('00:00:00') ? moment(recurrence.start) : moment.tz(recurrence.start, usedTZ)
-          const rDateStart = new Date(recurrence.start)
-
-          if (rMomentStart.isBetween(eventLimitStart, eventLimitEnd) === true) {
-            const existAlready = dates.filter(date => date === rDateStart)
-            if (existAlready.length === 0) {
-              dates.push(rDateStart)
-              if (movedRecurrencesAdded >= 1) {
-                recurrencesMoved[recurrencesMoved.length - 1].moved = rDateStart
-                if (movedRecurrencesAdded > 1) {
-                  console.log(`${movedRecurrencesAdded} recurrences with same key found in '${event.uid}'. Using the last one...`)
-                }
-              }
-              console.log(`Recurrence in '${event.uid}' was moved from '${rMomentRecurr}' to '${rMomentStart}'`)
-            }
-          } else {
-            const rMomentEnd = recurrence.end.toUTCString().includes('00:00:00') ? moment(recurrence.end) : moment.tz(recurrence.end, usedTZ)
-            if (rMomentStart.isBefore(eventLimitStart) && rMomentEnd.isAfter(eventLimitStart)) {
-              const existAlready = dates.filter(date => date === rDateStart)
-              if (existAlready.length === 0) {
-                dates.push(rDateStart)
-                if (movedRecurrencesAdded >= 1) {
-                  recurrencesMoved[recurrencesMoved.length - 1].moved = rDateStart
-                  if (movedRecurrencesAdded > 1) {
-                    console.log(`${movedRecurrencesAdded} recurrences with same key found in '${event.uid}'. Using the last one...`)
-                  }
-                }
-                console.log(`Recurrence in '${event.uid}' was moved from '${rMomentRecurr}' to '${rMomentStart}' AND is ongoing from '${rMomentStart}' to '${rMomentEnd}'`)
-              }
-            }
-          }
-        }
+    logProperties.forEach((prop: IcalCalendarLogProperty) => {
+      if (prop === 'event') {
+        console.log(prop.toUpperCase(), `for '${event.summary}' :`, event);
+      } else {
+        // @ts-expect-error
+        console.log(prop.toUpperCase(), `in '${event.summary}' :`, event[prop]);
       }
+    });
 
-      // convert all recurring dates from UTC to local moment instances IF event.skipTZ doesn't exist or is false
-      const localDates = dates.map(date => event.skipTZ ? moment(date.toISOString()) : moment.tz(date.toISOString(), usedTZ))
+    console.log('Start:', event.start.toISOString(), event.start.tz, "-- Converted:", startDate.toISO(), startDate.zoneName);
+    console.log('End:', event.end.toISOString(), event.start.tz, "-- Converted:", endDate.toISO(), endDate.zoneName);
 
-      fixWholeDayExDates(event)
+    debug(
+      `Summary: '${event.summary}' -- Start: '${startDate.toFormat("dd.MM.yyyy HH:mm:ss")}' -- End: '${endDate.toFormat("dd.MM.yyyy HH:mm:ss")}' -- UID: '${event.uid}'`
+    );
 
-      let logged = false
-      for (const date of localDates) {
-        let newEvent = deepClone(event)
-        if (event.exdate) {
-          // "exdate" is an invalid array. And since "deepClone" only clones valid values, "exdate" becomes an empty array.
-          // To make up for this we have to add the original "exdate" property to the cloned object
-          newEvent.exdate = event.exdate
-        }
-        let duration = getDuration(event.start, event.end)
-        const offsetThis = moment.tz(event.start, usedTZ).utcOffset()
-
-        // hacky wacky shitty thing that works and takes dst into account. Thanks to Mats!
-        let start = event.skipTZ ? moment(date) : moment.tz(date, usedTZ).add(offsetThis, 'minutes')
-        let end = event.skipTZ ? getEnd(start, duration) : getEnd(start, duration, usedTZ)
-        if (Array.isArray(extrasUIDs) && extrasUIDs.includes(event.uid)) {
-          if (event.skipTZ) {
-            console.log('Start created without timezone', start, start.get('hours'), start.toDate().getHours())
-            console.log('End created without timezone', end, end.get('hours'), end.toDate().getHours())
-          } else {
-            console.log(`Start created with timezone '${usedTZ}'`, start, start.get('hours'), start.toDate().getHours())
-            console.log(`End created with timezone '${usedTZ}'`, end, end.get('hours'), end.toDate().getHours())
-          }
-        }
-
-        if (event.start.toUTCString().includes('00:00:00')) {
-          start = moment(date.toDate())
-          end = getEnd(date.toDate(), duration)
-          if (Array.isArray(extrasUIDs) && extrasUIDs.includes(event.uid)) {
-            console.log('Timezone removed from start (if any) because its a full day event', start, start.get('hours'), start.toDate().getHours())
-            console.log('Timezone removed from end (if any) because its a full day event', end, end.get('hours'), end.toDate().getHours())
-          }
-        }
-
-        // use just the date of the recurrence to look up overrides and exceptions (i.e. chop off time information)
-        //const dateLookupKey = moment(start).add(offsetThis, 'minutes').toISOString().slice(0, 10)
-        const movedRecurrence = recurrencesMoved.find((rm) => (rm.moved - date.toDate()) === 0)
-        const dateLookupKey = (movedRecurrence !== undefined ? moment(movedRecurrence.original) : moment(start)).add(offsetThis, 'minutes').toISOString().slice(0, 10)
-        // exdates are stored in UTC with GMT timezone. dates found with rrule.between are also stored in UTC BUT has no timezone information.
-        // These dates can then be different even though they actually are the same.
-        //const previousDay = (event.skipTZ ? moment(start) : moment(start).add(offsetThis, 'minutes')).subtract(1, 'day')
-        const previousDay = (event.skipTZ ? (movedRecurrence !== undefined ? moment(movedRecurrence.original) : moment(start)) : (movedRecurrence !== undefined ? moment(movedRecurrence.original) : moment(start)).add(offsetThis, 'minutes')).subtract(1, 'day')
-        const previousDayLookupKey = previousDay.toISOString().slice(0, 10)
-
-        // for each date that we're checking, it's possible that there is a recurrence override for that one day.
-        if (newEvent.recurrences !== undefined && newEvent.recurrences[dateLookupKey] !== undefined) {
-          // we found an override, so for this recurrence, use a potentially different title, start date, and duration.
-          const recdate = event.skipTZ ? moment(newEvent.recurrences[dateLookupKey].start) : moment.tz(newEvent.recurrences[dateLookupKey].start, usedTZ)
-          if (recdate.isSame(start, 'day')) {
-            newEvent = deepClone(newEvent.recurrences[dateLookupKey])
-            start = event.skipTZ ? moment(newEvent.start) : moment.tz(newEvent.start, usedTZ)
-            duration = getDuration(newEvent.start, newEvent.end)
-            end = event.skipTZ ? getEnd(start, duration) : getEnd(start, duration, usedTZ)
-          }
-        }
-        // for each date that we're checking, it's possible that there is a recurrence override for that one day, and the UTC start time might even move back one day if different timezones
-        if (newEvent.recurrences !== undefined && newEvent.recurrences[previousDayLookupKey] !== undefined) {
-          // we found an override; because of timezones it appears as previousDay even though it is equal to date; so for this recurrence, use a potentially different title, start date, and duration.
-          const recdate = event.skipTZ ? moment(newEvent.recurrences[previousDayLookupKey].start) : moment.tz(newEvent.recurrences[previousDayLookupKey].start, usedTZ)
-          if (recdate.isSame(start, 'day')) {
-            newEvent = deepClone(newEvent.recurrences[previousDayLookupKey])
-            start = event.skipTZ ? moment(newEvent.start) : moment.tz(newEvent.start, usedTZ)
-            duration = getDuration(newEvent.start, newEvent.end)
-            end = event.skipTZ ? getEnd(start, duration) : getEnd(start, duration, usedTZ)
-          }
-        }
-        // make sure the end time hasn't already past and that start time isn't either long into the future
-        
-        if (end.isBefore(now) || start.isAfter(eventLimitEnd)) {
-          // do not add event
-          continue
-        }
-
-        if (!logged && Array.isArray(logProperties) && logProperties.length > 0) {
-          logProperties.forEach(prop => {
-            if (prop === 'event') {
-              console.log(prop.toUpperCase(), `for '${event.summary}' :`, newEvent)
-            } else {
-              console.log(prop.toUpperCase(), `in '${event.summary}' :`, newEvent[prop])
-            }
-          })
-          logged = true
-        }
-
-        if (newEvent.exdate !== undefined) {
-          // if there's no recurrence override, check for an exception date. Exception dates represent exceptions to the rule.
-          if (newEvent.exdate[dateLookupKey] !== undefined) {
-            // this date is an exception date, which means we should skip it in the recurrence pattern.
-            const exdate = event.skipTZ ? moment(newEvent.exdate[dateLookupKey]) : moment.tz(newEvent.exdate[dateLookupKey], usedTZ)
-            if (exdate.isSame(start, 'day')) {
-              console.log(`Skipping '${newEvent.uid}' @ `, date, '(', newEvent.exdate[dateLookupKey], ')', 'because it exists in exdate by date lookup key')
-              // do not add event
-              continue
-            }
-          }
-          if (newEvent.exdate[previousDayLookupKey] !== undefined && newEvent.datetype === 'date') {
-            // this date is an exception date; because of timezones it appears as previousDay even though it is equal to date; which means we should skip it in the recurrence pattern.
-            const exdate = event.skipTZ ? moment(newEvent.exdate[previousDayLookupKey]) : moment.tz(newEvent.exdate[previousDayLookupKey], usedTZ)
-            if (exdate.isSame(start, 'day')) {
-              console.log(`Skipping '${newEvent.uid}' @ `, date, '(', newEvent.exdate[previousDayLookupKey], ')', 'because it exists in exdate by previousDay lookup key')
-              // do not add event
-              continue
-            }
-          }
-        }
-
-        test(event.summary, start, end, (typeof event.rrule !== 'undefined'), usedTZ, 'offset: ', start.utcOffset(), `${event.start.toUTCString().includes('00:00:00') ? ` full day (${event.start.toUTCString()})` : ''}`)
-        newEvent.start = start
-        newEvent.end = end
-        newEvent.uid = `${newEvent.uid}_${start.toDate().toISOString().slice(0, 10)}`
-
-        events.push(newEvent)
-        recurrenceEventCount++
-      }
-    } catch (_err) {
-      console.log(`Recurring -- Something weird on event '${event.summary}':`, event, 'ERROR ::', _err)
-    }
+    debug(`Summary end: '${event.summary}'`)
+    events.push(createCalendarEvent(event, startDate, endDate));
   }
 
-  debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`)
+  debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`);
 
-  // keep only properties used
-  return events.map(event => {
-    const freebusy = event['MICROSOFT-CDO-BUSYSTATUS'] || event['X-MICROSOFT-CDO-BUSYSTATUS'] || ''
-
-    // dig out a meeting url (if any)
-    const meetingUrl = extractMeetingUrl(event) || ''
-
-    return {
-      start: event.start,
-      datetype: event.datetype,
-      end: event.end,
-      uid: event.uid,
-      description: event.description,
-      location: event.location,
-      summary: event.summary,
-      fullDayEvent: event.datetype === 'date',
-      skipTZ: event.skipTZ === true,
-      freebusy,
-      meetingUrl
-    }
-  })*/
+  return events;
 };

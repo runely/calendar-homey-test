@@ -1,6 +1,6 @@
-import type { IcalCalendarEvent } from "../../types/IcalCalendarEvent";
+import type { VEvent } from "node-ical";
 
-export const extractMeetingUrl = (event: IcalCalendarEvent): string | null => {
+export const extractMeetingUrl = (event: VEvent): string | null => {
   if (event.description === "") {
     return null;
   }

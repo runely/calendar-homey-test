@@ -2,8 +2,7 @@ import type { IcalCalendar } from "../../types/IcalCalendar";
 import type { IcalCalendarEvent } from "../../types/IcalCalendarEvent";
 
 const sortEvents = (a: IcalCalendarEvent, b: IcalCalendarEvent) => {
-  return a.start.diff(b.start);
-  //return a.start - b.start
+  return a.start.diff(b.start).milliseconds;
 };
 
 export const sortCalendars = (calendars: IcalCalendar[]): IcalCalendar[] => {

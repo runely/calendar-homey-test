@@ -66,7 +66,7 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Ical
   // get ical events
   const { name, eventLimit, options, tz, logProperties } = calendarsItem;
   let { uri } = calendarsItem;
-  const isLocalFile = (options.isLocalFile !== undefined && options.isLocalFile) || false;
+  const isLocalFile: boolean = (options.isLocalFile !== undefined && options.isLocalFile) || false;
 
   if (uri === "") {
     warn(`getEvents: Calendar '${name}' has empty uri. Skipping...`);
@@ -136,7 +136,7 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Ical
       warn(`Trying to download '${name}' from '${uri}'`);
       const icsData: string | null = await downloadIcsFile(name, uri);
       if (icsData !== null) {
-        const icsPath: string = join(__dirname, `../../contents/ics/${createDateFilename(name, d)}.ics`);
+        const icsPath: string = join(import.meta.dirname, `../../../contents/ics/${createDateFilename(name, d)}.ics`);
         warn(`About to save ics file to path '${icsPath}'`);
         saveIcsFile(icsData, icsPath);
         warn("Ics file saved");

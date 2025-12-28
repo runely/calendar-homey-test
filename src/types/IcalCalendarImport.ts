@@ -1,39 +1,34 @@
-import type { ManipulateType } from "dayjs";
+import type { DurationUnit } from "luxon";
 
 export type IcalCalendarLogProperty =
-  | "params"
-  | "tzid"
-  | "description"
-  | "rrule"
-  | "recurrences"
-  | "recurrenceid"
-  | "exdate"
+  | "event"
+  | "type"
+  | "method"
+  | "dtstamp"
   | "uid"
+  | "sequence"
+  | "transparency"
+  | "class"
   | "summary"
   | "start"
   | "datetype"
   | "end"
-  | "class"
-  | "priority"
-  | "dtstamp"
-  | "transparency"
-  | "status"
-  | "sequence"
   | "location"
-  | "method"
-  | "prodid"
-  | "version"
-  | "WR-CALNAME"
-  | "WR-TIMEZONE"
-  | "LIC-LOCATION"
+  | "description"
+  | "url"
+  | "completion"
   | "created"
   | "lastmodified"
-  | "organizer"
+  | "rrule"
   | "attendee"
-  | "url"
-  | "attach"
-  | "categories"
-  | "calscale"
+  | "recurrences"
+  | "status"
+  | "organizer"
+  | "exdate"
+  | "geo"
+  | "recurrenceid"
+  | "alarms"
+  | "params"
   | "MICROSOFT-CDO-APPT-SEQUENCE"
   | "MICROSOFT-CDO-BUSYSTATUS"
   | "MICROSOFT-CDO-INTENDEDSTATUS"
@@ -58,7 +53,7 @@ export type IcalCalendarLogProperty =
 
 export type IcalCalendarEventLimit = {
   value: number;
-  type: ManipulateType;
+  type: DurationUnit;
 };
 
 export type IcalCalendarImport = {

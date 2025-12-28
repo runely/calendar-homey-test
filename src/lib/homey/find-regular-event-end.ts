@@ -1,8 +1,7 @@
-import type { Dayjs } from "dayjs";
+/*import type { Dayjs } from "dayjs";
 import type { VEvent } from "node-ical";
-import { dayjsIfy } from "../dayjs-fns.js";
 
-/*type DurationUnit = 'W' | 'D' | 'H' | 'M' | 'S';
+/!*type DurationUnit = 'W' | 'D' | 'H' | 'M' | 'S';
 
 type DurationUnitItem = {
   name: string;
@@ -37,7 +36,7 @@ const getDurationUnit = (str: string, unit: DurationUnit): number => {
   return str.search(regex) >= 0
     ? Number.parseInt(str.substring(str.search(regex), str.indexOf(unit)))
     : 0;
-}*/
+}*!/
 
 export const findRegularEventEnd = (event: VEvent, timezone: string | undefined): Dayjs => {
   if (event.end) {
@@ -47,19 +46,19 @@ export const findRegularEventEnd = (event: VEvent, timezone: string | undefined)
   const end: Dayjs = dayjsIfy(event.start, timezone);
 
   // NOTE: duration is not a property that exists on VEvent. No need to check this. Leave it here if it's implemented on VEvent later on?<
-  /*if (event.datetype === 'date' && (!event.duration || typeof event.duration !== 'string')) {
+  /!*if (event.dateType === 'date' && (!event.duration || typeof event.duration !== 'string')) {
     return end.add(1, "day");
-  }*/
+  }*!/
 
   if (event.datetype === "date-time") {
     return end;
   }
 
   // NOTE: duration is not a property that exists on VEvent. No need to check this. Leave it here if it's implemented on VEvent later on?<
-  /*durationUnits.forEach((unit: DurationUnitItem) => {
+  /!*durationUnits.forEach((unit: DurationUnitItem) => {
     const durationUnit: number = getDurationUnit(event.duration, unit.abbr)
     end = event.duration.startsWith('-') ? end.subtract(durationUnit, unit.name) : end.add(durationUnit, unit.name)
-  })*/
+  })*!/
 
   return end;
-};
+};*/

@@ -51,7 +51,7 @@ This Node.js app will let you test [IcalCalendar](https://github.com/runely/cale
         }
         ```
     3. Add your own calendars to the list
-        1. If you want to test a local ics file, swap out the uri with full path to the ics file and add `"isLocalFile": true` to `"options"`
+        1. If you want to test a local ics file, swap out the uri with full path to the ics file and set `"isLocalFile"` to `true` in `"options"`
 
 ## Usage
 
@@ -76,8 +76,8 @@ This Node.js app will let you test [IcalCalendar](https://github.com/runely/cale
 
 To change how far into the future you want to retrieve events:
 1. Open `calendars.json` and find the calendar you want to adjust
-2. Change `value` to any number and `type` to one of the predefined types
-    1. "days", "hours", "milliseconds", "minutes", "months", "quarters", "seconds", "weeks", "years"
+2. Change `value` to any number and `type` to one of the predefined types:
+    1. "year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second" | "millisecond"
 
 If you want to download the actual *.ics file from the given URL:
 1. Open `calendars.json` and find the calendar you want to adjust
@@ -122,39 +122,32 @@ Add properties you want printed to console per event per calendar:
 
 3. Add one or more of these event property names to the `logProperties` array
     - `type`
-    - `params`
-    - `tzid`
-    - `description`
-    - `rrule`
-    - `recurrences`
-    - `recurrenceid`
-    - `exdate`
+    - `method`
+    - `dtstamp`
     - `uid`
+    - `sequence`
+    - `transparency`
+    - `class`
     - `summary`
     - `start`
     - `datetype`
     - `end`
-    - `class`
-    - `priority`
-    - `dtstamp`
-    - `transparency`
-    - `status`
-    - `sequence`
     - `location`
-    - `method`
-    - `prodid`
-    - `version`
-    - `WR-CALNAME`
-    - `WR-TIMEZONE`
-    - `LIC-LOCATION`
+    - `description`
+    - `url`
+    - `completion`
     - `created`
     - `lastmodified`
-    - `organizer`
+    - `rrule`
     - `attendee`
-    - `url`
-    - `attach`
-    - `categories`
-    - `calscale`
+    - `recurrences`
+    - `status`
+    - `organizer`
+    - `exdate`
+    - `geo`
+    - `recurrenceid`
+    - `alarms`
+    - `params`
     - `MICROSOFT-CDO-APPT-SEQUENCE`
     - `MICROSOFT-CDO-BUSYSTATUS`
     - `MICROSOFT-CDO-INTENDEDSTATUS`
