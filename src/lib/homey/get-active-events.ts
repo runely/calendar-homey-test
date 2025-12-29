@@ -271,7 +271,7 @@ export const getActiveEvents = (
 
     if (event.rrule) {
       // Recurring event
-      debug(`Recurrence ${event.datetype === "date" ? "FULL DAY" : ""} start. Summary: '${event.summary}'`);
+      debug(`Recurrence${event.datetype === "date" ? " FULL DAY " : " "}start. Summary: '${event.summary}'`);
 
       let logged: boolean = false;
       const recurrenceDates: IcalOccurence[] = getRecurrenceDates(event, eventLimitStart, eventLimitEnd, usedTZ, showLuxonDebugInfo, printOccurrences);
@@ -352,7 +352,7 @@ export const getActiveEvents = (
       continue;
     }
 
-    debug(`Summary ${event.datetype === "date" ? "FULL DAY" : ""} start: '${event.summary}'`);
+    debug(`Summary${event.datetype === "date" ? " FULL DAY " : " "}start: '${event.summary}'`);
 
     regularEventCount++;
 
