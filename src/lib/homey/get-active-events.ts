@@ -258,14 +258,14 @@ export const getActiveEvents = (
       dateWithTimeZone: event.start,
       localTimeZone: usedTZ,
       fullDayEvent: event.datetype === "date",
-      keepOriginalZonedTime: false,
+      keepOriginalZonedTime: "APPLE-CREATOR-IDENTITY" in event, // NOTE: Apple Calendar needs special handling here because they store the timezoned time as local time
       quiet: !showLuxonDebugInfo
     });
     const endDate: DateTime<Valid> = luxGetCorrectDateTime({
       dateWithTimeZone: event.end,
       localTimeZone: usedTZ,
       fullDayEvent: event.datetype === "date",
-      keepOriginalZonedTime: false,
+      keepOriginalZonedTime: "APPLE-CREATOR-IDENTITY" in event, // NOTE: Apple Calendar needs special handling here because they store the timezoned time as local time
       quiet: !showLuxonDebugInfo
     });
 
@@ -294,7 +294,7 @@ export const getActiveEvents = (
             dateWithTimeZone: createDateWithTimeZone(currentEvent.start, currentEvent.start.tz || undefined),
             localTimeZone: usedTZ,
             fullDayEvent: event.datetype === "date",
-            keepOriginalZonedTime: false,
+            keepOriginalZonedTime: "APPLE-CREATOR-IDENTITY" in event, // NOTE: Apple Calendar needs special handling here because they store the timezoned time as local time
             quiet: !showLuxonDebugInfo
           });
 
@@ -302,7 +302,7 @@ export const getActiveEvents = (
             dateWithTimeZone: createDateWithTimeZone(currentEvent.end, currentEvent.end.tz || undefined),
             localTimeZone: usedTZ,
             fullDayEvent: event.datetype === "date",
-            keepOriginalZonedTime: false,
+            keepOriginalZonedTime: "APPLE-CREATOR-IDENTITY" in event, // NOTE: Apple Calendar needs special handling here because they store the timezoned time as local time
             quiet: !showLuxonDebugInfo
           });
 
