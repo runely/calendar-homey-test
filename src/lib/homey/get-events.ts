@@ -92,7 +92,7 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Ical
     const d: Date = new Date();
 
     if (options.saveAll) {
-      const rawPath: string = join(__dirname, `../../contents/raw/${createDateFilename(name, d)}.${typeof data === "object" ? "json" : "ics"}`);
+      const rawPath: string = join(import.meta.dirname, `../../../contents/raw/${createDateFilename(name, d)}.${typeof data === "object" ? "json" : "ics"}`);
       warn(`About to save file to path '${rawPath}'`);
       saveIcsFile(typeof data === "object" ? JSON.stringify(data, null, 2) : data, rawPath);
       warn("Raw file saved");
@@ -124,8 +124,8 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Ical
 
     if (options.saveActive) {
       const activePath: string = join(
-        __dirname,
-        `../../contents/active/${createDateFilename(name, d)}.${typeof activeEvents === "object" ? "json" : "ics"}`
+        import.meta.dirname,
+        `../../../contents/active/${createDateFilename(name, d)}.${typeof activeEvents === "object" ? "json" : "ics"}`
       );
       warn(`About to save file to path '${activePath}'`);
       saveIcsFile(typeof activeEvents === "object" ? JSON.stringify(activeEvents, null, 2) : activeEvents, activePath);
