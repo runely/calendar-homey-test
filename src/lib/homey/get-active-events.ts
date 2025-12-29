@@ -141,18 +141,24 @@ const getRecurrenceDates = (
   event: VEvent,
   eventLimitStart: DateTime<Valid>,
   eventLimitEnd: DateTime<Valid>,
-  localTimeZone: string
+  localTimeZone: string,
+  showLuxonDebugInfo: boolean,
+  printOccurrences: boolean
 ): IcalOccurence[] => {
   const instances = new Map<string, IcalOccurence>();
 
   if (event.rrule) {
-    for (const date of event.rrule.between(eventLimitStart.toJSDate(), eventLimitEnd.toJSDate(), true)) {
+    const occurrences: Date[] = event.rrule.between(eventLimitStart.toJSDate(), eventLimitEnd.toJSDate(), true);
+    if (printOccurrences) {
+      console.log("occurrences", occurrences);
+    }
+    for (const date of occurrences) {
       const occurence: DateTime<Valid> = luxGetCorrectDateTime({
         dateWithTimeZone: createDateWithTimeZone(date, event.rrule?.options.tzid || event.start.tz || undefined),
         localTimeZone: localTimeZone,
         fullDayEvent: event.datetype === "date",
         keepOriginalZonedTime: true,
-        quiet: true
+        quiet: !showLuxonDebugInfo
       });
 
       const occurenceUtc: DateTime<Valid> = occurence.toUTC();
@@ -184,7 +190,7 @@ const getRecurrenceDates = (
               localTimeZone: localTimeZone,
               fullDayEvent: event.datetype === "date",
               keepOriginalZonedTime: true,
-              quiet: true
+              quiet: !showLuxonDebugInfo
             })
           : null;
 
@@ -215,7 +221,9 @@ export const getActiveEvents = (
   timezone: string | undefined,
   data: CalendarResponse,
   eventLimit: IcalCalendarEventLimit,
-  logProperties: IcalCalendarLogProperty[]
+  logProperties: IcalCalendarLogProperty[],
+  showLuxonDebugInfo: boolean,
+  printOccurrences: boolean
 ): IcalCalendarEvent[] => {
   const usedTZ: string = timezone || luxGuessTimezone();
   const now: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), usedTZ); //.plus({ day: -10 });
@@ -251,14 +259,14 @@ export const getActiveEvents = (
       localTimeZone: usedTZ,
       fullDayEvent: event.datetype === "date",
       keepOriginalZonedTime: false,
-      quiet: true
+      quiet: !showLuxonDebugInfo
     });
     const endDate: DateTime<Valid> = luxGetCorrectDateTime({
       dateWithTimeZone: event.end,
       localTimeZone: usedTZ,
       fullDayEvent: event.datetype === "date",
       keepOriginalZonedTime: false,
-      quiet: true
+      quiet: !showLuxonDebugInfo
     });
 
     if (event.rrule) {
@@ -266,7 +274,7 @@ export const getActiveEvents = (
       debug(`Recurrence ${event.datetype === "date" ? "FULL DAY" : ""} start. Summary: '${event.summary}'`);
 
       let logged: boolean = false;
-      const recurrenceDates: IcalOccurence[] = getRecurrenceDates(event, eventLimitStart, eventLimitEnd, usedTZ);
+      const recurrenceDates: IcalOccurence[] = getRecurrenceDates(event, eventLimitStart, eventLimitEnd, usedTZ, showLuxonDebugInfo, printOccurrences);
       for (const { occurenceStart, lookupKey } of recurrenceDates) {
         if (event.exdate?.[lookupKey]) {
           warn(`ExDate found for event UID '${event.uid}' on date '${lookupKey}'. Skipping this recurrence.`);
@@ -287,7 +295,7 @@ export const getActiveEvents = (
             localTimeZone: usedTZ,
             fullDayEvent: event.datetype === "date",
             keepOriginalZonedTime: false,
-            quiet: true
+            quiet: !showLuxonDebugInfo
           });
 
           const overrideEndDate: DateTime<Valid> = luxGetCorrectDateTime({
@@ -295,7 +303,7 @@ export const getActiveEvents = (
             localTimeZone: usedTZ,
             fullDayEvent: event.datetype === "date",
             keepOriginalZonedTime: false,
-            quiet: true
+            quiet: !showLuxonDebugInfo
           });
 
           currentDuration = overrideEndDate.diff(currentStartDate);

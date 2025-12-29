@@ -22,34 +22,36 @@ This Node.js app will let you test [IcalCalendar](https://github.com/runely/cale
     ```
 3. Add your calendars
     1. Create the file `calendars.json`
-    2. Insert the following to test the test calendar
-        ```json
-        {
-            "calendars": [
-                {
-                    "name": "Default",
-                    "uri": "https://raw.githubusercontent.com/runely/calendar-homey-test/master/calendars/default.ics",
-                    "import": true,
-                    "eventLimit": {
-                        "value": 2,
-                        "type": "months"
-                    },
-                    "options": {
-                        "isLocalFile": false,
-                        "downloadIcs": false,
-                        "saveAll": false,
-                        "saveActive": false,
-                        "showMeetingUrls": false,
-                        "printAllEvents": false,
-                        "printEventByIndex": -1,
-                        "printEventByUIDs": []
-                    },
-                    "logProperties": [],
-                    "tz": "Europe/Oslo"
-                }
-            ]
-        }
-        ```
+       2. Insert the following to test the test calendar
+           ```json
+           {
+               "calendars": [
+                   {
+                       "name": "Default",
+                       "uri": "https://raw.githubusercontent.com/runely/calendar-homey-test/master/calendars/default.ics",
+                       "import": true,
+                       "eventLimit": {
+                           "value": 2,
+                           "type": "months"
+                       },
+                       "options": {
+                           "isLocalFile": false,
+                           "downloadIcs": false,
+                           "saveAll": false,
+                           "saveActive": false,
+                           "showMeetingUrls": false,
+                           "showLuxonDebugInfo": false,
+                           "printOccurrences": false,
+                           "printAllEvents": false,
+                           "printEventByIndex": -1,
+                           "printEventByUIDs": []
+                       },
+                       "logProperties": [],
+                       "tz": "Europe/Oslo"
+                   }
+               ]
+           }
+           ```
     3. Add your own calendars to the list
         1. If you want to test a local ics file, swap out the uri with full path to the ics file and set `"isLocalFile"` to `true` in `"options"`
 
@@ -101,6 +103,14 @@ Change *timezone* per calendar:
 Show meeting urls:
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `showMeetingUrl` from **false** to **true**
+
+Show luxon debug info:
+1. Open `calendars.json` and find the calendar you want to adjust
+2. Change `showLuxonDebugInfo` from **false** to **true**
+
+Print occurrences to console:
+1. Open `calendars.json` and find the calendar you want to adjust
+2. Change `printOccurrences` from **false** to **true**
 
 Print all events to console:
 1. Open `calendars.json` and find the calendar you want to adjust

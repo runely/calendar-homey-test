@@ -113,7 +113,7 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Ical
       printEventsByUids(data, values, options.printEventByUIDs);
     }
 
-    const activeEvents: IcalCalendarEvent[] = getActiveEvents(tz, data, eventLimit, logProperties);
+    const activeEvents: IcalCalendarEvent[] = getActiveEvents(tz, data, eventLimit, logProperties, options.showLuxonDebugInfo || false, options.printOccurrences || false);
     const totalEventsSize: number = new Blob([JSON.stringify(data)]).size / 1000;
 
     info(

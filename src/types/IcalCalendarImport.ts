@@ -67,6 +67,8 @@ export type IcalCalendarImport = {
     saveAll?: boolean;
     saveActive?: boolean;
     showMeetingUrls?: boolean;
+    showLuxonDebugInfo?: boolean;
+    printOccurrences?: boolean;
     printAllEvents?: boolean;
     printEventByIndex?: number;
     printEventByUIDs?: string[];

@@ -42,7 +42,7 @@ import type { IcalCalendarImport } from "./types/IcalCalendarImport";
       console.log(data);
     }
 
-    const activeData: IcalCalendarEvent[] = getActiveEvents(calendar.tz, data, calendar.eventLimit, calendar.logProperties);
+    const activeData: IcalCalendarEvent[] = getActiveEvents(calendar.tz, data, calendar.eventLimit, calendar.logProperties, calendar.options.showLuxonDebugInfo || false, calendar.options.printOccurrences || false);
 
     if (showOnlyTheseUids.length > 0) {
       //const activeEvents: IcalCalendarEvent[] = activeData.filter((ev: IcalCalendarEvent) => showOnlyTheseUids.find((uid: string) => ev.uid.startsWith(uid)));
