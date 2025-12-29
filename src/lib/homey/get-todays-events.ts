@@ -9,7 +9,7 @@ import { sortCalendarEvents } from "./sort-events.js";
 
 export const getEventsToday = (calendars: IcalCalendar[], timezone: string | undefined): IcalCalendarEventWithName[] => {
   const eventsToday: IcalCalendarEventWithName[] = [];
-  const now: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), timezone || "UTC"); // TODO: should timezone be local and not UTC?
+  const now: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), timezone || "UTC");
 
   calendars.forEach((calendar: IcalCalendar) => {
     calendar.events.forEach((event: IcalCalendarEvent) => {

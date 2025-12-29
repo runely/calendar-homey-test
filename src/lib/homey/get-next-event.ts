@@ -10,7 +10,7 @@ import { luxGetZonedDateTime } from "../luxon-fns.js";
 export const getNextEvent = (calendars: IcalCalendar[], timezone: string | undefined): IcalCalendarNextEvent | null => {
   let minutesUntilStart: number = 1057885015800000;
   let nextEvent: IcalCalendarNextEvent | null = null;
-  const now: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), timezone || "UTC"); // TODO: should timezone be local and not UTC?
+  const now: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), timezone || "UTC");
 
   calendars.forEach((calendar: IcalCalendar) => {
     calendar.events.forEach((event: IcalCalendarEvent) => {

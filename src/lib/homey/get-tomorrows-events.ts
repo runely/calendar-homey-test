@@ -11,7 +11,7 @@ export const getEventsTomorrow = (calendars: IcalCalendar[], timezone: string | 
   const eventsTomorrow: IcalCalendarEventWithName[] = [];
   const tomorrowStart: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), timezone || "UTC")
     .plus({ day: 1 })
-    .startOf("day"); // TODO: should timezone be local and not UTC?
+    .startOf("day");
 
   calendars.forEach((calendar: IcalCalendar) => {
     calendar.events.forEach((event: IcalCalendarEvent) => {
