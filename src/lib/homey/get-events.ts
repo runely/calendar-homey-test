@@ -85,10 +85,22 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Cale
   info(`getEvents: Getting events (${eventLimit.value} ${eventLimit.type} ahead) for calendar '${name}' (${uri}) (${tz})`);
 
   try {
+    const d: Date = new Date();
+
+    if (!isLocalFile && options.downloadIcs) {
+      warn(`Trying to download '${name}' from '${uri}'`);
+      const icsData: string | null = await downloadIcsFile(name, uri);
+      if (icsData !== null) {
+        const icsPath: string = join(import.meta.dirname, `../../../contents/ics/${createDateFilename(name, d)}.ics`);
+        warn(`About to save ics file to path '${icsPath}'`);
+        saveIcsFile(icsData, icsPath);
+        warn("Ics file saved");
+      }
+    }
+
     const data: CalendarResponse = !isLocalFile ? await nodeIcal.fromURL(uri) : nodeIcal.parseFile(uri);
 
     debug(`nodeIcal(${!isLocalFile ? "URL" : "FILE"}): Success getting data via node-ical`);
-    const d: Date = new Date();
 
     if (options.saveAll) {
       const rawPath: string = join(
@@ -139,17 +151,6 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Cale
       warn(`About to save file to path '${activePath}'`);
       saveIcsFile(typeof activeEvents === "object" ? JSON.stringify(activeEvents, null, 2) : activeEvents, activePath);
       warn("Active file saved");
-    }
-
-    if (!isLocalFile && options.downloadIcs) {
-      warn(`Trying to download '${name}' from '${uri}'`);
-      const icsData: string | null = await downloadIcsFile(name, uri);
-      if (icsData !== null) {
-        const icsPath: string = join(import.meta.dirname, `../../../contents/ics/${createDateFilename(name, d)}.ics`);
-        warn(`About to save ics file to path '${icsPath}'`);
-        saveIcsFile(icsData, icsPath);
-        warn("Ics file saved");
-      }
     }
   } catch (_error) {
     if (_error instanceof Error) {
