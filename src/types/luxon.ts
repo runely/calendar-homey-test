@@ -1,6 +1,6 @@
 import type { DateWithTimeZone } from "node-ical";
 
-export type GetCorrectDateTimeOptions = {
+export type GetDateTimeOptions = {
   dateWithTimeZone: DateWithTimeZone;
   localTimeZone: string;
   fullDayEvent: boolean;

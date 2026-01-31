@@ -2,8 +2,7 @@ import { Blob } from "node:buffer";
 import { join } from "node:path";
 import nodeIcal, { type CalendarComponent, type CalendarResponse } from "node-ical";
 import { debug, error, info, warn } from "../../config.js";
-import type { IcalCalendar } from "../../types/IcalCalendar";
-import type { IcalCalendarEvent } from "../../types/IcalCalendarEvent";
+import type { Calendar, CalendarEvent } from "../../types/IcalCalendar";
 import type { IcalCalendarImport } from "../../types/IcalCalendarImport";
 import { downloadIcsFile } from "../debug/download-ics-file.js";
 import { saveIcsFile } from "../debug/save-ics-file.js";
@@ -57,8 +56,8 @@ const printEventsByUids = (data: CalendarResponse, values: CalendarComponent[], 
   }
 };
 
-export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<IcalCalendar | null> => {
-  const calendar: IcalCalendar = {
+export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Calendar | null> => {
+  const calendar: Calendar = {
     calendarName: "N/A",
     events: []
   };
@@ -92,7 +91,10 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Ical
     const d: Date = new Date();
 
     if (options.saveAll) {
-      const rawPath: string = join(import.meta.dirname, `../../../contents/raw/${createDateFilename(name, d)}.${typeof data === "object" ? "json" : "ics"}`);
+      const rawPath: string = join(
+        import.meta.dirname,
+        `../../../contents/raw/${createDateFilename(name, d)}.${typeof data === "object" ? "json" : "ics"}`
+      );
       warn(`About to save file to path '${rawPath}'`);
       saveIcsFile(typeof data === "object" ? JSON.stringify(data, null, 2) : data, rawPath);
       warn("Raw file saved");
@@ -113,7 +115,14 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Ical
       printEventsByUids(data, values, options.printEventByUIDs);
     }
 
-    const activeEvents: IcalCalendarEvent[] = getActiveEvents(tz, data, eventLimit, logProperties, options.showLuxonDebugInfo || false, options.printOccurrences || false);
+    const activeEvents: CalendarEvent[] = getActiveEvents(
+      tz,
+      data,
+      eventLimit,
+      logProperties,
+      options.showLuxonDebugInfo || false,
+      options.printOccurrences || false
+    );
     const totalEventsSize: number = new Blob([JSON.stringify(data)]).size / 1000;
 
     info(

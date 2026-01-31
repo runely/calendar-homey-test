@@ -3,15 +3,16 @@ import { DateTime, type DateTimeMaybeValid, Duration } from "luxon";
 import type { Valid } from "luxon/src/_util";
 import type { CalendarComponent, CalendarResponse, DateWithTimeZone, VEvent } from "node-ical";
 
-import { debug, warn } from "../../config.js";
+import { debug, error, warn } from "../../config.js";
 
-import type { IcalOccurence } from "../../types/IcalCalendar";
-import type { BusyStatus, IcalCalendarEvent } from "../../types/IcalCalendarEvent";
+import type { BusyStatus, CalendarEvent, IcalOccurence } from "../../types/IcalCalendar";
 import type { IcalCalendarEventLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport";
 
-import { luxGetCorrectDateTime, luxGetZonedDateTime, luxGuessTimezone, luxStartOf } from "../luxon-fns.js";
+import { getDateTime, getZonedDateTime, guessTimezone } from "../luxon-fns.js";
+
 import { extractFreeBusy } from "./extract-freebusy.js";
 import { extractMeetingUrl } from "./extract-meeting-url.js";
+import { hasData } from "./has-data.js";
 
 const untilRegexp = /UNTIL=(\d{8}T\d{6})/;
 
@@ -33,23 +34,25 @@ const convertToText = (prop: string, value: { params: unknown; val: string } | s
   return value;
 };
 
-const createCalendarEvent = (event: VEvent, start: DateTime<Valid>, end: DateTime<Valid>): IcalCalendarEvent => {
+const createNewEvent = (event: VEvent, start: DateTime<true>, end: DateTime<true>): CalendarEvent => {
   // dig out free/busy status (if any)
   const freeBusy: BusyStatus | undefined = extractFreeBusy(event);
 
   // dig out a meeting url (if any)
   const meetingUrl = extractMeetingUrl(event) || "";
 
-  const calendarEvent: IcalCalendarEvent = {
-    start,
+  const calendarEvent: CalendarEvent = {
+    start: start.setLocale("nb-NO"),
     dateType: event.datetype,
-    end,
+    end: end.setLocale("nb-NO"),
     uid: event.uid,
     description: event.description,
     location: event.location,
     summary: event.summary,
     fullDayEvent: event.datetype === "date"
   };
+
+  // TODO: Any point in adding created date?
 
   if (freeBusy) {
     calendarEvent.freeBusy = freeBusy;
@@ -68,6 +71,7 @@ const filterOutUnwantedEvents = (events: CalendarComponent[], eventLimitStart: D
 
   // statistics only
   let nonVEvents: number = 0;
+  let regularInvalidVEvents: number = 0;
   let regularVEventsPast: number = 0;
   let regularVEventsInside: number = 0;
   let recurringVEventsWithoutUntil: number = 0;
@@ -82,6 +86,14 @@ const filterOutUnwantedEvents = (events: CalendarComponent[], eventLimitStart: D
     }
 
     if (!event.rrule) {
+      if (!hasData(event.start) || !hasData(event.end)) {
+        error(
+          `[ERROR] - getActiveEvents/filterOutUnwantedEvents: Missing DTSTART (${event.start} (${event.start?.tz || "undefined TZ"})) and/or DTEND (${event.end} (${event.end?.tz || "undefined TZ"})) on non-recurring event UID '${event.uid}'. Skipping event.`
+        );
+        regularInvalidVEvents++;
+        return false;
+      }
+
       const startMillis: number = event.start.getTime();
       const endMillis: number = event.end.getTime();
       const isRegularEventInside: boolean =
@@ -89,11 +101,13 @@ const filterOutUnwantedEvents = (events: CalendarComponent[], eventLimitStart: D
         (startMillis <= eventLimitStartMillis && endMillis >= eventLimitEndMillis) || // event fully outside range (ongoing)
         (startMillis <= eventLimitStartMillis && endMillis > eventLimitStartMillis) || // event starting before range, ending after start limit (ongoing)
         (startMillis >= eventLimitStartMillis && startMillis < eventLimitEndMillis && endMillis >= eventLimitEndMillis); // event starting inside range, ending after range (ongoing)
+
       if (isRegularEventInside) {
         regularVEventsInside++;
-      } else {
-        regularVEventsPast++;
+        return isRegularEventInside;
       }
+
+      regularVEventsPast++;
       return isRegularEventInside;
     }
 
@@ -118,29 +132,45 @@ const filterOutUnwantedEvents = (events: CalendarComponent[], eventLimitStart: D
     }
 
     // keep only events where untilDateTime is after now
-    const untilMillis: number = (untilDateTime as DateTime<Valid>).toMillis();
+    const untilMillis: number = (untilDateTime as DateTime<true>).toMillis();
     const isRecurringUntilFuture: boolean =
       (untilMillis > eventLimitStartMillis && untilMillis >= eventLimitEndMillis) ||
       (untilMillis > eventLimitStartMillis && untilMillis <= eventLimitEndMillis);
+
     if (isRecurringUntilFuture) {
       recurringVEventsWithFutureUntil++;
-    } else {
-      recurringVEventsWithPastUntil++;
+      return isRecurringUntilFuture;
     }
+
+    recurringVEventsWithPastUntil++;
     return isRecurringUntilFuture;
   }) as VEvent[];
 
   debug(
-    `filterOutUnwantedEvents: Filtered out events numbers -- nonVEvents: ${nonVEvents} -- regularVEventsPast: ${regularVEventsPast} -- recurringVEventsWithPastUntil: ${recurringVEventsWithPastUntil} -- recurringVEventsWithoutUntil: ${recurringVEventsWithoutUntil} -- regularVEventsInside: ${regularVEventsInside} -- recurringVEventsWithFutureUntil: ${recurringVEventsWithFutureUntil}. Totally filtered from ${events.length} to ${filteredEvents.length} events.`
+    `filterOutUnwantedEvents: Filtered out events numbers -- nonVEvents: ${nonVEvents} -- regularInvalidVEvents: ${regularInvalidVEvents} -- regularVEventsPast: ${regularVEventsPast} -- recurringVEventsWithPastUntil: ${recurringVEventsWithPastUntil} -- recurringVEventsWithoutUntil: ${recurringVEventsWithoutUntil} -- regularVEventsInside: ${regularVEventsInside} -- recurringVEventsWithFutureUntil: ${recurringVEventsWithFutureUntil}. Totally filtered from ${events.length} to ${filteredEvents.length} events.`
   );
 
   return filteredEvents;
 };
 
+const getClonedEvent = (event: VEvent): VEvent => {
+  const clonedEvent: VEvent = deepClone(event) as VEvent;
+  clonedEvent.start = event.start;
+  clonedEvent.end = event.end;
+  clonedEvent.created = event.created;
+  clonedEvent.dtstamp = event.dtstamp;
+  clonedEvent.lastmodified = event.lastmodified;
+  clonedEvent.rrule = event.rrule;
+  clonedEvent.recurrences = event.recurrences;
+  clonedEvent.exdate = event.exdate;
+
+  return clonedEvent;
+};
+
 const getRecurrenceDates = (
   event: VEvent,
-  eventLimitStart: DateTime<Valid>,
-  eventLimitEnd: DateTime<Valid>,
+  eventLimitStart: DateTime<true>,
+  eventLimitEnd: DateTime<true>,
   localTimeZone: string,
   showLuxonDebugInfo: boolean,
   printOccurrences: boolean
@@ -152,18 +182,28 @@ const getRecurrenceDates = (
     if (printOccurrences) {
       console.log("occurrences", occurrences);
     }
+
     for (const date of occurrences) {
-      const occurence: DateTime<Valid> = luxGetCorrectDateTime({
-        dateWithTimeZone: createDateWithTimeZone(date, event.rrule?.options.tzid || event.start.tz || undefined),
+      const occurence: DateTime<true> | null = getDateTime({
+        dateWithTimeZone: createDateWithTimeZone(date, event.start.tz || undefined),
         localTimeZone: localTimeZone,
         fullDayEvent: event.datetype === "date",
         keepOriginalZonedTime: true,
         quiet: !showLuxonDebugInfo
       });
+      if (!occurence) {
+        warn(`getRecurrenceDates: Invalid occurrence date for event UID '${event.uid}'. Skipping this occurrence.`);
+        continue;
+      }
 
-      const occurenceUtc: DateTime<Valid> = occurence.toUTC();
-      const occurenceStamp: string = occurenceUtc.toISO();
-      const lookupKey: string = occurenceUtc.toISODate();
+      const occurenceUtc: DateTime<true> = occurence.toUTC();
+      const occurenceStamp: string | null = occurenceUtc.toISO();
+      const lookupKey: string | null = occurenceUtc.toISODate();
+      if (!occurenceStamp || !lookupKey) {
+        warn(`getRecurrenceDates: Invalid occurrenceStamp or lookupKey for event UID '${event.uid}'. Skipping this occurrence.`);
+        continue;
+      }
+
       if (event.recurrences?.[lookupKey]) {
         warn(`getRecurrenceDates: Recurrence override found for event UID '${event.uid}' on date '${lookupKey}'. Skipping occurrence.`);
         continue;
@@ -183,9 +223,9 @@ const getRecurrenceDates = (
 
   if (event.recurrences) {
     for (const recurrence of Object.values(event.recurrences)) {
-      const recurStart: DateTime<Valid> | null =
+      const recurStart: DateTime<true> | null =
         recurrence?.start instanceof Date
-          ? luxGetCorrectDateTime({
+          ? getDateTime({
               dateWithTimeZone: createDateWithTimeZone(recurrence.start, recurrence.start.tz || undefined),
               localTimeZone: localTimeZone,
               fullDayEvent: event.datetype === "date",
@@ -197,7 +237,7 @@ const getRecurrenceDates = (
       const recurId: DateTimeMaybeValid | null = recurrence?.recurrenceid instanceof Date ? DateTime.fromJSDate(recurrence.recurrenceid) : null;
 
       if (!recurStart || !recurId || !recurId.isValid) {
-        warn(`getRecurrenceDates: Invalid recurrence or recurrenceid found for event UID '${event.uid}'. Skipping this recurrence.`);
+        warn(`getRecurrenceDates: Invalid recurrence or recurrenceId found for event UID '${event.uid}'. Skipping this recurrence.`);
         continue;
       }
 
@@ -205,11 +245,22 @@ const getRecurrenceDates = (
         continue;
       }
 
-      const recurUtc: DateTimeMaybeValid = recurStart.toUTC();
-      const recurStamp: string = recurUtc.toISO();
+      const recurUtc: DateTime<true> = recurStart.toUTC();
+      const recurUtcIso: string | null = recurUtc.toISODate();
+      if (!recurUtcIso) {
+        warn(`getRecurrenceDates: Invalid recurUtcIso for event UID '${event.uid}'. Skipping this recurrence.`);
+        continue;
+      }
+
+      const recurStamp: string | null = recurUtc.toISO();
+      if (!recurStamp) {
+        warn(`getRecurrenceDates: Invalid recurStamp for event UID '${event.uid}'. Skipping this recurrence.`);
+        continue;
+      }
+
       instances.set(recurStamp, {
         occurenceStart: recurStart,
-        lookupKey: recurUtc.toISODate()
+        lookupKey: recurUtcIso
       });
     }
   }
@@ -217,34 +268,55 @@ const getRecurrenceDates = (
   return Array.from(instances.values()).sort((a: IcalOccurence, b: IcalOccurence) => a.occurenceStart.toMillis() - b.occurenceStart.toMillis());
 };
 
+const shouldKeepOriginalZonedTime = (
+  event: VEvent,
+  eventTimezone: string | undefined,
+  localTimezone: string,
+  isRecurrenceOverride: boolean = false
+): boolean => {
+  if ("APPLE-CREATOR-IDENTITY" in event) {
+    // NOTE: Apple Calendar needs special handling here because they store the timeZoned time as local time
+    return true;
+  }
+
+  if (isRecurrenceOverride) {
+    // for recurrence overrides, we always want to keep the original timezone to avoid shifting issues
+    return true;
+  }
+
+  /* NOTE: Exchange Calendar uses Windows timezones and node-ical replaces them with IANA timezones.
+           Exchange Calendar stores the timeZoned time as local time, same as with Apple Calendar.
+           Interesting to see if this breaks any timezone conversion out there.
+  */
+  return eventTimezone !== localTimezone;
+};
+
 export const getActiveEvents = (
   timezone: string | undefined,
   data: CalendarResponse,
   eventLimit: IcalCalendarEventLimit,
   logProperties: IcalCalendarLogProperty[],
-  showLuxonDebugInfo: boolean,
+  showLuxonDebugInfo: boolean, // same as logAllEvents
   printOccurrences: boolean
-): IcalCalendarEvent[] => {
-  const usedTZ: string = timezone || luxGuessTimezone();
-  const now: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), usedTZ); //.plus({ day: -10 });
-  const eventLimitStart: DateTime<Valid> = luxStartOf(luxGetZonedDateTime(DateTime.local(), usedTZ), "day"); //.plus({ day: -10 });
+): CalendarEvent[] => {
+  const usedTZ: string = timezone || guessTimezone();
+  const eventLimitStart: DateTime<true> = getZonedDateTime(DateTime.now(), usedTZ).startOf("day");
 
   const eventLimitDuration: Duration = Duration.fromObject({ [eventLimit.type]: eventLimit.value });
-  const eventLimitEnd: DateTime<Valid> = DateTime.local().endOf("day").plus(eventLimitDuration); //.plus({ day: -10 });
-  const events: IcalCalendarEvent[] = [];
+  const eventLimitEnd: DateTime<true> = DateTime.now().endOf("day").plus(eventLimitDuration);
+  const events: CalendarEvent[] = [];
   let recurrenceEventCount: number = 0;
   let regularEventCount: number = 0;
 
   debug(
-    `get-active-events: Using timezone '${usedTZ}' -- Now: '${now.toFormat("dd.MM.yyyy HH:mm:ss")}' -- Event limit start: '${eventLimitStart.toFormat("dd.MM.yyyy HH:mm:ss")}' -- Event limit end: '${eventLimitEnd.toFormat("dd.MM.yyyy HH:mm:ss")}' -- logPropertiesCount: ${logProperties.length}`
+    `getActiveEvents: Using timezone '${usedTZ}' -- Event limit start: '${eventLimitStart.toFormat("dd.MM.yyyy HH:mm:ss")}' -- Event limit end: '${eventLimitEnd.toFormat("dd.MM.yyyy HH:mm:ss")}' -- logPropertiesCount: ${logProperties.length}`
   );
 
   const actualEvents: VEvent[] = filterOutUnwantedEvents(Object.values(data), eventLimitStart, eventLimitEnd);
+
   for (const event of actualEvents) {
     if (event.recurrenceid) {
-      // TODO: Fix handling of recurrenceid events
-      warn(`We don't care about recurrenceid for now (${event.uid})`);
-      debug(`Recurrence override start/end. Summary: '${event.summary}'`);
+      debug(`getActiveEvents - RecurrenceId for (${event.uid}) should be handled in getOccurrenceDates. Skipping.`);
       continue;
     }
 
@@ -254,65 +326,93 @@ export const getActiveEvents = (
     event.description = convertToText("description", event.description, event.uid);
     event.uid = convertToText("uid", event.uid, event.uid);
 
-    const startDate: DateTime<Valid> = luxGetCorrectDateTime({
+    const startDate: DateTime<true> | null = getDateTime({
       dateWithTimeZone: event.start,
       localTimeZone: usedTZ,
       fullDayEvent: event.datetype === "date",
-      keepOriginalZonedTime: "APPLE-CREATOR-IDENTITY" in event, // NOTE: Apple Calendar needs special handling here because they store the timezoned time as local time
+      keepOriginalZonedTime: shouldKeepOriginalZonedTime(event, event.start.tz, usedTZ),
       quiet: !showLuxonDebugInfo
     });
-    const endDate: DateTime<Valid> = luxGetCorrectDateTime({
+    const endDate: DateTime<true> | null = getDateTime({
       dateWithTimeZone: event.end,
       localTimeZone: usedTZ,
       fullDayEvent: event.datetype === "date",
-      keepOriginalZonedTime: "APPLE-CREATOR-IDENTITY" in event, // NOTE: Apple Calendar needs special handling here because they store the timezoned time as local time
+      keepOriginalZonedTime: shouldKeepOriginalZonedTime(event, event.end.tz, usedTZ),
       quiet: !showLuxonDebugInfo
     });
 
+    if (!startDate || !endDate) {
+      error(`getActiveEvents - DTSTART (${startDate}) and/or DTEND (${endDate}) is invalid on '${event.summary}' (${event.uid})`);
+
+      continue;
+    }
+
     if (event.rrule) {
       // Recurring event
-      debug(`Recurrence${event.datetype === "date" ? " FULL DAY " : " "}start. Summary: '${event.summary}'`);
-
       let logged: boolean = false;
-      const recurrenceDates: IcalOccurence[] = getRecurrenceDates(event, eventLimitStart, eventLimitEnd, usedTZ, showLuxonDebugInfo, printOccurrences);
+      const recurrenceDates: IcalOccurence[] = getRecurrenceDates(
+        event,
+        eventLimitStart,
+        eventLimitEnd,
+        usedTZ,
+        showLuxonDebugInfo,
+        printOccurrences
+      );
+
+      if (recurrenceDates.length === 0) {
+        warn(`getActiveEvents - No recurrence dates in time range found for event UID '${event.uid}'. Skipping this recurring event.`);
+
+        continue;
+      }
+
       for (const { occurenceStart, lookupKey } of recurrenceDates) {
         if (event.exdate?.[lookupKey]) {
-          warn(`ExDate found for event UID '${event.uid}' on date '${lookupKey}'. Skipping this recurrence.`);
+          warn(`getActiveEvents - ExDate found for event UID '${event.uid}' on date '${lookupKey}'. Skipping this recurrence.`);
           continue;
         }
 
-        let currentEvent: VEvent = deepClone(event);
+        let currentEvent: VEvent = getClonedEvent(event);
         let currentDuration: Duration<true> = endDate.diff(startDate);
-        let currentStartDate: DateTime<Valid> = occurenceStart;
+        let currentStartDate: DateTime<true> | null = occurenceStart;
 
         if (currentEvent.recurrences?.[lookupKey]) {
-          // we found an override, so for this recurrence, use a potentially different start/end
+          // we found an override, so for this recurrence, use a potentially different start/end.
           currentEvent = currentEvent.recurrences[lookupKey] as VEvent;
-          warn(`Found recurrence override for event UID '${event.uid}' on date '${lookupKey}'. Using overridden start/end.`);
+          warn(`getActiveEvents - Found recurrence override for event UID '${event.uid}' on date '${lookupKey}'. Using overridden start/end.`);
 
-          currentStartDate = luxGetCorrectDateTime({
+          currentStartDate = getDateTime({
             dateWithTimeZone: createDateWithTimeZone(currentEvent.start, currentEvent.start.tz || undefined),
             localTimeZone: usedTZ,
             fullDayEvent: event.datetype === "date",
-            keepOriginalZonedTime: "APPLE-CREATOR-IDENTITY" in event, // NOTE: Apple Calendar needs special handling here because they store the timezoned time as local time
+            keepOriginalZonedTime: shouldKeepOriginalZonedTime(event, currentEvent.start.tz, usedTZ, true),
             quiet: !showLuxonDebugInfo
           });
 
-          const overrideEndDate: DateTime<Valid> = luxGetCorrectDateTime({
+          const overrideEndDate: DateTime<true> | null = getDateTime({
             dateWithTimeZone: createDateWithTimeZone(currentEvent.end, currentEvent.end.tz || undefined),
             localTimeZone: usedTZ,
             fullDayEvent: event.datetype === "date",
-            keepOriginalZonedTime: "APPLE-CREATOR-IDENTITY" in event, // NOTE: Apple Calendar needs special handling here because they store the timezoned time as local time
+            keepOriginalZonedTime: shouldKeepOriginalZonedTime(event, currentEvent.end.tz, usedTZ, true),
             quiet: !showLuxonDebugInfo
           });
+
+          if (!currentStartDate || !overrideEndDate) {
+            error(
+              `getActiveEvents - DTSTART and/or DTEND is invalid on RECURRENCE OVERRIDE for '${currentEvent.summary}' (${currentEvent.uid}) with lookupKey '${lookupKey}'`
+            );
+
+            continue;
+          }
 
           currentDuration = overrideEndDate.diff(currentStartDate);
         }
 
-        const currentEndDate: DateTime<Valid> = currentStartDate.plus(currentDuration);
+        const currentEndDate: DateTime<true> = currentStartDate.plus(currentDuration);
 
         if (currentEndDate.toMillis() < eventLimitStart.toMillis() || currentStartDate.toMillis() > eventLimitEnd.toMillis()) {
-          warn(`Skipping recurrence for event UID '${event.uid}' on date '${lookupKey}' as it is outside event limits.`);
+          warn(
+            `getActiveEvents - Recurrence occurence is not inside event limit on event UID '${event.uid}' on date '${lookupKey}'. Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentStartDate.toISO()} (${currentStartDate.zoneName})). End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentEndDate.toISO()} (${currentEndDate.zoneName})). Skipping this recurrence.`
+          );
           continue;
         }
 
@@ -330,31 +430,26 @@ export const getActiveEvents = (
           logged = true;
         }
 
-        /*console.log(
-          "Start:",
-          currentEvent.start.toISOString(),
-          currentEvent.start.tz,
-          "-- Converted:",
-          currentStartDate.toISO(),
-          currentStartDate.zoneName
-        );
-        console.log("End:", currentEvent.end.toISOString(), currentEvent.start.tz, "-- Converted:", currentEndDate.toISO(), currentEndDate.zoneName);*/
+        // NOTE: IF toISODate fails, fallback month will be a single digit IF month is < 10
+        const startDateIso: string = currentStartDate.toISODate() || `${currentStartDate.year}-${currentStartDate.month}-${currentStartDate.day}`;
+        currentEvent.uid = `${currentEvent.uid}_${startDateIso}`;
 
-        currentEvent.uid = `${currentEvent.uid}_${currentStartDate.toISO().slice(0, 10)}`;
-
-        debug(
-          `Recurrence Summary: '${currentEvent.summary}' -- Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentStartDate.toISO()} (${currentStartDate.zoneName})) -- End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentEndDate.toISO()} (${currentEndDate.zoneName})) -- UID: '${currentEvent.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
-        );
-        events.push(createCalendarEvent(currentEvent, currentStartDate, currentEndDate));
+        if (showLuxonDebugInfo) {
+          debug(
+            `getActiveEvents - Recurrence Summary: '${currentEvent.summary}' -- Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentStartDate.toISO()} (${currentStartDate.zoneName})) -- End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentEndDate.toISO()} (${currentEndDate.zoneName})) -- UID: '${currentEvent.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
+          );
+        }
+        events.push(createNewEvent(currentEvent, currentStartDate, currentEndDate));
       }
 
-      debug(`Recurrence end. Summary: '${event.summary}'`);
       continue;
     }
 
-    debug(`Summary${event.datetype === "date" ? " FULL DAY " : " "}start: '${event.summary}'`);
-
     regularEventCount++;
+
+    debug(
+      `getActiveEvents - Summary: '${event.summary}' -- Start: '${startDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${startDate.toISO()} (${startDate.zoneName})) -- End: '${endDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${endDate.toISO()} (${endDate.zoneName})) -- UID: '${event.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
+    );
 
     logProperties.forEach((prop: IcalCalendarLogProperty) => {
       if (prop === "event") {
@@ -365,18 +460,12 @@ export const getActiveEvents = (
       }
     });
 
-    /*console.log("Start:", event.start.toISOString(), event.start.tz, "-- Converted:", startDate.toISO(), startDate.zoneName);
-    console.log("End:", event.end.toISOString(), event.start.tz, "-- Converted:", endDate.toISO(), endDate.zoneName);*/
-
-    debug(
-      `Summary: '${event.summary}' -- Start: '${startDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${startDate.toISO()} (${startDate.zoneName})) -- End: '${endDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${endDate.toISO()} (${endDate.zoneName})) -- UID: '${event.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
-    );
-
-    debug(`Summary end: '${event.summary}'`);
-    events.push(createCalendarEvent(event, startDate, endDate));
+    events.push(createNewEvent(event, startDate, endDate));
   }
 
-  debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`);
+  if (showLuxonDebugInfo) {
+    debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`);
+  }
 
   return events;
 };

@@ -5,10 +5,8 @@ import { getNextEvent } from "./lib/homey/get-next-event.js";
 import { getEventsToday } from "./lib/homey/get-todays-events.js";
 import { getEventsTomorrow } from "./lib/homey/get-tomorrows-events.js";
 import { sortCalendars } from "./lib/homey/sort-events.js";
-import type { IcalCalendar } from "./types/IcalCalendar";
-import type { IcalCalendarEvent, IcalCalendarEventWithName } from "./types/IcalCalendarEvent";
+import type { Calendar, CalendarEvent, CalendarEventExtended, NextEvent } from "./types/IcalCalendar";
 import type { IcalCalendarImport } from "./types/IcalCalendarImport";
-import type { IcalCalendarNextEvent } from "./types/IcalCalendarNextEvent";
 
 const valInArr = (val: string, arr: string[]): boolean => {
   return arr.indexOf(val) > -1;
@@ -28,10 +26,10 @@ const valInArr = (val: string, arr: string[]): boolean => {
   info(`fromFile: Getting ${calendars.length} calendars\n`);
 
   let timezone: string = "";
-  const calendarsEvents: IcalCalendar[] = [];
+  const calendarsEvents: Calendar[] = [];
 
   for await (const calendar of calendars) {
-    const calendarEvents: IcalCalendar | null = await getEvents(calendar);
+    const calendarEvents: Calendar | null = await getEvents(calendar);
     if (calendarEvents === null) {
       warn(`No calendar events found for '${calendar.name}'`);
       continue;
@@ -48,7 +46,7 @@ const valInArr = (val: string, arr: string[]): boolean => {
 
     calendarsEvents.push(calendarEvents);
     if (calendar.options.showMeetingUrls) {
-      calendarEvents.events.forEach((event: IcalCalendarEvent) => {
+      calendarEvents.events.forEach((event: CalendarEvent) => {
         if (event.meetingUrl) {
           debug(`\nMeeting URL: '${calendarEvents.calendarName}' -- '${event.summary}' -- '${event.meetingUrl}'\n`);
         }
@@ -64,7 +62,7 @@ const valInArr = (val: string, arr: string[]): boolean => {
   sortCalendars(calendarsEvents);
 
   try {
-    const totalCalendarsEvents: number = calendarsEvents.reduce((previousValue: number, currentValue: IcalCalendar): number => {
+    const totalCalendarsEvents: number = calendarsEvents.reduce((previousValue: number, currentValue: Calendar): number => {
       return previousValue + currentValue.events.length;
     }, 0);
     debug(`Total calendar events: ${totalCalendarsEvents}`);
@@ -74,7 +72,7 @@ const valInArr = (val: string, arr: string[]): boolean => {
 
     // get next event
     if (valInArr("nextEvent", args)) {
-      const nextEvent: IcalCalendarNextEvent | null = getNextEvent(calendarsEvents, timezone);
+      const nextEvent: NextEvent | null = getNextEvent(calendarsEvents, timezone);
       if (nextEvent === null) {
         info("\nNext event: null");
       } else {
@@ -84,13 +82,13 @@ const valInArr = (val: string, arr: string[]): boolean => {
 
     // get todays events
     if (valInArr("eventsToday", args)) {
-      const eventsToday: IcalCalendarEventWithName[] = getEventsToday(calendarsEvents, timezone);
+      const eventsToday: CalendarEventExtended[] = getEventsToday(calendarsEvents, timezone);
       info("\nEvents today:", JSON.stringify(eventsToday, null, 2));
     }
 
     // get tomorrows events
     if (valInArr("eventsTomorrow", args)) {
-      const eventsTomorrow: IcalCalendarEventWithName[] = getEventsTomorrow(calendarsEvents, timezone);
+      const eventsTomorrow: CalendarEventExtended[] = getEventsTomorrow(calendarsEvents, timezone);
       info("\nEvents tomorrow:", JSON.stringify(eventsTomorrow, null, 2));
     }
 

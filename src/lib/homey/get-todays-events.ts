@@ -1,18 +1,17 @@
 import { DateTime } from "luxon";
 
 import type { Valid } from "luxon/src/_util";
-import type { IcalCalendar } from "../../types/IcalCalendar";
-import type { IcalCalendarEvent, IcalCalendarEventWithName } from "../../types/IcalCalendarEvent";
+import type { Calendar, CalendarEvent, CalendarEventExtended } from "../../types/IcalCalendar";
 
-import { luxGetZonedDateTime } from "../luxon-fns.js";
+import { getZonedDateTime } from "../luxon-fns.js";
 import { sortCalendarEvents } from "./sort-events.js";
 
-export const getEventsToday = (calendars: IcalCalendar[], timezone: string | undefined): IcalCalendarEventWithName[] => {
-  const eventsToday: IcalCalendarEventWithName[] = [];
-  const now: DateTime<Valid> = luxGetZonedDateTime(DateTime.local(), timezone || "UTC");
+export const getEventsToday = (calendars: Calendar[], timezone: string | undefined): CalendarEventExtended[] => {
+  const eventsToday: CalendarEventExtended[] = [];
+  const now: DateTime<Valid> = getZonedDateTime(DateTime.local(), timezone || "UTC");
 
-  calendars.forEach((calendar: IcalCalendar) => {
-    calendar.events.forEach((event: IcalCalendarEvent) => {
+  calendars.forEach((calendar: Calendar) => {
+    calendar.events.forEach((event: CalendarEvent) => {
       const startDiff: number = now.diff(event.start).milliseconds;
       const endDiff: number = now.diff(event.end).milliseconds;
       const startIsSameDay: boolean = event.start.hasSame(now, "day");

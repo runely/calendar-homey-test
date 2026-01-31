@@ -1,18 +1,17 @@
-import type { IcalCalendar } from "../../types/IcalCalendar";
-import type { IcalCalendarEvent } from "../../types/IcalCalendarEvent";
+import type { Calendar, CalendarEvent } from "../../types/IcalCalendar";
 
-const sortEvents = (a: IcalCalendarEvent, b: IcalCalendarEvent) => {
+const sortEvents = (a: CalendarEvent, b: CalendarEvent) => {
   return a.start.diff(b.start).milliseconds;
 };
 
-export const sortCalendars = (calendars: IcalCalendar[]): IcalCalendar[] => {
-  return calendars.map((calendar: IcalCalendar) => {
-    const sortedEvents: IcalCalendarEvent[] = calendar.events.sort(sortEvents);
+export const sortCalendars = (calendars: Calendar[]): Calendar[] => {
+  return calendars.map((calendar: Calendar) => {
+    const sortedEvents: CalendarEvent[] = calendar.events.sort(sortEvents);
 
     return { ...calendar, events: sortedEvents };
   });
 };
 
-export const sortCalendarEvents = (events: IcalCalendarEvent[]): IcalCalendarEvent[] => {
+export const sortCalendarEvents = (events: CalendarEvent[]): CalendarEvent[] => {
   return events.sort(sortEvents);
 };
