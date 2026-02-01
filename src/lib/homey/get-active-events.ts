@@ -1,7 +1,7 @@
 import deepClone from "lodash.clonedeep";
 import { DateTime, type DateTimeMaybeValid, Duration } from "luxon";
 import type { Valid } from "luxon/src/_util";
-import type { CalendarComponent, CalendarResponse, DateWithTimeZone, VEvent } from "node-ical";
+import type { CalendarComponent, CalendarResponse, DateWithTimeZone, ParameterValue, VEvent } from "node-ical";
 
 import { debug, error, warn } from "../../config.js";
 
@@ -25,30 +25,36 @@ const createDateWithTimeZone = (date: Date, timeZone: string | undefined): DateW
   }) as DateWithTimeZone;
 };
 
-const convertToText = (prop: string, value: { params: unknown; val: string } | string, uid: string): string => {
-  if (typeof value === "object") {
-    debug(`getActiveEvents/convertToText - '${prop}' was object. Using 'val' of object '${uid}'`);
-    return value.val;
+const convertToText = (prop: string, value: ParameterValue, uid: string): string => {
+  if (value === undefined) {
+    return "";
   }
 
-  return value;
+  if (typeof value === "string") {
+    return value;
+  }
+
+  debug(`getActiveEvents/convertToText - '${prop}' has params. Using 'val' of ParameterValue '${uid}':`, value);
+  return value.val;
 };
 
 const createNewEvent = (event: VEvent, start: DateTime<true>, end: DateTime<true>): CalendarEvent => {
   // dig out free/busy status (if any)
   const freeBusy: BusyStatus | undefined = extractFreeBusy(event);
 
+  const description: string = convertToText("description", event.description, event.uid);
+
   // dig out a meeting url (if any)
-  const meetingUrl = extractMeetingUrl(event) || "";
+  const meetingUrl: string = extractMeetingUrl(description) || "";
 
   const calendarEvent: CalendarEvent = {
     start: start.setLocale("nb-NO"),
     dateType: event.datetype,
     end: end.setLocale("nb-NO"),
     uid: event.uid,
-    description: event.description,
-    location: event.location,
-    summary: event.summary,
+    description: convertToText("description", event.description, event.uid),
+    location: convertToText("location", event.location, event.uid),
+    summary: convertToText("summary", event.summary, event.uid),
     fullDayEvent: event.datetype === "date"
   };
 
