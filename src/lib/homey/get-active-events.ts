@@ -302,14 +302,14 @@ export const getActiveEvents = (
   data: CalendarResponse,
   eventLimit: IcalCalendarEventLimit,
   logProperties: IcalCalendarLogProperty[],
-  showLuxonDebugInfo: boolean, // same as logAllEvents
+  showLuxonDebugInfo: boolean, // same as logAllEvents in calendar-homey
   printOccurrences: boolean
 ): CalendarEvent[] => {
   const usedTZ: string = timezone || guessTimezone();
   const eventLimitStart: DateTime<true> = getZonedDateTime(DateTime.now(), usedTZ).startOf("day");
-
-  const eventLimitDuration: Duration = Duration.fromObject({ [eventLimit.type]: eventLimit.value });
-  const eventLimitEnd: DateTime<true> = DateTime.now().endOf("day").plus(eventLimitDuration);
+  const eventLimitEnd: DateTime<true> = getZonedDateTime(DateTime.now(), usedTZ)
+    .plus(Duration.fromObject({ [eventLimit.type]: eventLimit.value }))
+    .endOf("day");
   const events: CalendarEvent[] = [];
   let recurrenceEventCount: number = 0;
   let regularEventCount: number = 0;
