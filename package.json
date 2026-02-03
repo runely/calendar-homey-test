@@ -17,7 +17,7 @@
     "node-ical": "0.24.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.5",
+    "@biomejs/biome": "2.3.14",
     "@types/chalk": "^0.4.31",
     "@types/lodash.clonedeep": "^4.5.9",
     "@types/luxon": "^3.7.1",
