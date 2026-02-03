@@ -3,7 +3,7 @@ import { DateTime, type DateTimeMaybeValid, Duration } from "luxon";
 import type { Valid } from "luxon/src/_util";
 import type { CalendarComponent, CalendarResponse, DateWithTimeZone, ParameterValue, VEvent } from "node-ical";
 
-import { debug, error, warn } from "../../config.js";
+import { debug, error, info, warn } from "../../config.js";
 
 import type { BusyStatus, CalendarEvent, IcalOccurence } from "../../types/IcalCalendar";
 import type { IcalCalendarEventLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport";
@@ -34,7 +34,7 @@ const convertToText = (prop: string, value: ParameterValue, uid: string): string
     return value;
   }
 
-  debug(`getActiveEvents/convertToText - '${prop}' has params. Using 'val' of ParameterValue '${uid}':`, value);
+  warn(`getActiveEvents/convertToText - '${prop}' has params. Using 'val' of ParameterValue '${uid}':`, value);
   return value.val;
 };
 
@@ -322,7 +322,7 @@ export const getActiveEvents = (
 
   for (const event of actualEvents) {
     if (event.recurrenceid) {
-      debug(`getActiveEvents - RecurrenceId for (${event.uid}) should be handled in getOccurrenceDates. Skipping.`);
+      warn(`getActiveEvents - RecurrenceId for (${event.uid}) should be handled in getOccurrenceDates. Skipping.`);
       continue;
     }
 
@@ -440,11 +440,9 @@ export const getActiveEvents = (
         const startDateIso: string = currentStartDate.toISODate() || `${currentStartDate.year}-${currentStartDate.month}-${currentStartDate.day}`;
         currentEvent.uid = `${currentEvent.uid}_${startDateIso}`;
 
-        if (showLuxonDebugInfo) {
-          debug(
-            `getActiveEvents - Recurrence Summary: '${currentEvent.summary}' -- Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentStartDate.toISO()} (${currentStartDate.zoneName})) -- End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentEndDate.toISO()} (${currentEndDate.zoneName})) -- UID: '${currentEvent.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
-          );
-        }
+        info(
+          `getActiveEvents - Recurrence Summary: '${currentEvent.summary}' -- Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentStartDate.toISO()} (${currentStartDate.zoneName})) -- End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentEndDate.toISO()} (${currentEndDate.zoneName})) -- UID: '${currentEvent.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
+        );
         events.push(createNewEvent(currentEvent, currentStartDate, currentEndDate));
       }
 
@@ -453,7 +451,7 @@ export const getActiveEvents = (
 
     regularEventCount++;
 
-    debug(
+    info(
       `getActiveEvents - Summary: '${event.summary}' -- Start: '${startDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${startDate.toISO()} (${startDate.zoneName})) -- End: '${endDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${endDate.toISO()} (${endDate.zoneName})) -- UID: '${event.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
     );
 
@@ -469,9 +467,7 @@ export const getActiveEvents = (
     events.push(createNewEvent(event, startDate, endDate));
   }
 
-  if (showLuxonDebugInfo) {
-    debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`);
-  }
+  debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`);
 
   return events;
 };
