@@ -2,8 +2,6 @@ import { DateTime, type DateTimeMaybeValid, type ZoneOptions } from "luxon";
 
 import { debug, error } from "../config.js";
 
-import type { GetDateTimeOptions } from "../types/luxon";
-
 export const getZonedDateTime = (dateTime: DateTime<true> | DateTime<false>, timezone: string, options?: ZoneOptions): DateTime<true> => {
   if (!dateTime.isValid) {
     throw new Error(`getZonedDateTime: Invalid DateTime object. Cannot set zone. Reason: ${dateTime.invalidReason}`);
@@ -17,64 +15,65 @@ export const getZonedDateTime = (dateTime: DateTime<true> | DateTime<false>, tim
   return zonedDateTime as DateTime<true>;
 };
 
-export const getDateTime = (options: GetDateTimeOptions): DateTime<true> | null => {
+export const getDateTime = (
+  date: Date,
+  timezone: string | undefined,
+  localTimezone: string,
+  fullDayEvent: boolean,
+  quiet: boolean
+): DateTime<true> | null => {
   try {
-    const isoString: string = options.dateWithTimeZone.toISOString().slice(0, -5);
+    if (fullDayEvent) {
+      /*
+        - FullDayRegular: node-ical gir tilbake start i UTC ferdig konvertert. Lokal tiddsone må settes på etterpå uten konvertering
+        - FullDayRecurring: node-ical gir tilbake instance (fra between) i UTC ferdig konvertert. Lokal tiddsone må settes på etterpå uten konvertering
+      */
+      const fullDayDateTime: DateTimeMaybeValid = DateTime.fromJSDate(date, { zone: "utc" }).setZone(localTimezone, { keepLocalTime: true });
+      if (!fullDayDateTime.isValid) {
+        error(
+          `getDateTime: FULL-DAY :: Invalid DateTime generated :: Date: '${date}' :: Timezone: 'utc' :: LocalTimezone: '${localTimezone}' :: FullDayEvent: ${fullDayEvent} -> Reason: ${fullDayDateTime.invalidReason}`
+        );
+        return null;
+      }
 
-    if (options.fullDayEvent) {
-      const fullDayCalDate: DateTimeMaybeValid = DateTime.fromJSDate(options.dateWithTimeZone, { zone: "utc" })
-        .setZone(options.localTimeZone, { keepLocalTime: true })
-        .startOf("day");
-      if (!options.quiet) {
+      if (!quiet) {
         debug(
-          `getDateTime: FULL-DAY - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' ::  dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => fullDayCalDate: '${fullDayCalDate.toISO()}' (tz: '${options.localTimeZone}')`
+          `getDateTime: FULL-DAY :: Date: '${date}' :: Timezone: 'utc' :: LocalTimezone: '${localTimezone}' => fullDayDateTime: '${fullDayDateTime.toISO()}' (tz: '${fullDayDateTime.zoneName}')`
         );
       }
 
-      return fullDayCalDate as DateTime<true>;
+      return fullDayDateTime as DateTime<true>;
     }
 
-    if (!options.dateWithTimeZone.tz) {
-      const localTzCalDate: DateTimeMaybeValid = DateTime.fromFormat(isoString, "yyyy-MM-dd'T'HH:mm:ss", {
-        zone: options.localTimeZone
-      });
-      if (!options.quiet) {
-        debug(
-          `getDateTime: NON-TZ - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' ::  dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => localTzCalDate: '${localTzCalDate.toISO()}' (tz: '${options.localTimeZone}')`
-        );
-      }
+    /*
+      "Exchange" / "iCloud" / "Probably any other calendar provider" that stores TZID on the DTSTART - which means that the value in DTSTART is already stored in that timezone
+      - Regular: node-ical gir tilbake start i UTC og fromJSDate må bruke tz fra event.start. Lokal tidssone settes på etterpå (setZone)
+      - Recurring: node-ical gir tilbake instance (fra between) i UTC og fromJSDate må bruke tz fra event.start (IKKE fra instance da den er undefined). Lokal tidssone kan så settes på etterpå (setZone)
 
-      return localTzCalDate as DateTime<true>;
+      Google Calendar / Probably any other calendar provider that stores UTC on the DTSTART - which means that the value in DTSTART is in UTC
+      - Regular: node-ical gir tilbake start i UTC og fromJSDate må bruke lokal tz HVIS event.start.tz er undefined eller er UTC/Etc. Lokal tidssone settes på etterpå (setZone)
+      - Recurring: node-ical gir tilbake instance (fra between) i UTC og fromJSDate må bruke lokal tz HVIS event.start.tz er undefined eller er UTC/Etc. Lokal tidssone kan settes på etterpå (setZone). Er det samme som ble brukt ved konvertering er det ingen endring
+    */
+
+    const usedTimezone: string = timezone || "utc";
+    const dateTime: DateTimeMaybeValid = DateTime.fromJSDate(date, { zone: usedTimezone }).setZone(localTimezone);
+    if (!dateTime.isValid) {
+      error(
+        `getDateTime: Invalid DateTime generated :: Date: '${date}' :: Timezone: '${usedTimezone}' :: LocalTimezone: '${localTimezone}' :: FullDayEvent: ${fullDayEvent} -> Reason: ${dateTime.invalidReason}`
+      );
+      return null;
     }
 
-    if (!options.keepOriginalZonedTime) {
-      const calDate: DateTimeMaybeValid = DateTime.fromFormat(isoString, "yyyy-MM-dd'T'HH:mm:ss", {
-        zone: options.dateWithTimeZone.tz
-      });
-      const localCalDate: DateTimeMaybeValid = calDate.setZone(options.localTimeZone);
-      if (!options.quiet) {
-        debug(
-          `getDateTime: TZ - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' :: dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => calDate: '${calDate}' => localDate: '${localCalDate.toISO()}' (tz: '${options.localTimeZone}')`
-        );
-      }
-
-      return localCalDate as DateTime<true>;
-    }
-
-    const originalZonedCalDate: DateTimeMaybeValid = DateTime.fromJSDate(options.dateWithTimeZone, {
-      zone: options.dateWithTimeZone.tz
-    });
-    const originalZonedLocalCalDate: DateTimeMaybeValid = originalZonedCalDate.setZone(options.localTimeZone);
-    if (!options.quiet) {
+    if (!quiet) {
       debug(
-        `getDateTime: TZ - original dateWithTimeZone: '${options.dateWithTimeZone.toISOString()}' :: dateWithTimezone: '${isoString}' (tz: '${options.dateWithTimeZone.tz}') => originalZonedCalDate: '${originalZonedCalDate}' => originalZonedLocalCalDate: '${originalZonedLocalCalDate.toISO()}' (tz: '${options.localTimeZone}')`
+        `getDateTime: Date: '${date}' :: Timezone: '${usedTimezone}' :: LocalTimezone: '${localTimezone}' :: FullDayEvent: ${fullDayEvent} => dateTime: '${dateTime.toISO()}' (tz: '${dateTime.zoneName}')`
       );
     }
 
-    return originalZonedLocalCalDate as DateTime<true>;
+    return dateTime as DateTime<true>;
   } catch (err) {
     error(
-      `getDateTime - Failed to get DateTime from dateWithTimeZone: ${options.dateWithTimeZone}, LocalTimeZone: ${options.localTimeZone}, KeepOriginalZonedTime: ${options.keepOriginalZonedTime}, FullDayEvent: ${options.fullDayEvent} ->`,
+      `getDateTime: Failed to get DateTime. Date: ${date} :: Timezone: '${timezone}' :: LocalTimezone: ${localTimezone} :: FullDayEvent: ${fullDayEvent} ->`,
       err
     );
 

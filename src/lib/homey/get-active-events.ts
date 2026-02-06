@@ -1,7 +1,7 @@
 import deepClone from "lodash.clonedeep";
 import { DateTime, type DateTimeMaybeValid, Duration } from "luxon";
 import type { Valid } from "luxon/src/_util";
-import type { CalendarComponent, CalendarResponse, DateWithTimeZone, ParameterValue, VEvent } from "node-ical";
+import type { CalendarComponent, CalendarResponse, ParameterValue, VEvent } from "node-ical";
 
 import { debug, error, info, warn } from "../../config.js";
 
@@ -15,15 +15,6 @@ import { extractMeetingUrl } from "./extract-meeting-url.js";
 import { hasData } from "./has-data.js";
 
 const untilRegexp = /UNTIL=(\d{8}T\d{6})/;
-
-const createDateWithTimeZone = (date: Date, timeZone: string | undefined): DateWithTimeZone => {
-  return Object.defineProperty(date, "tz", {
-    value: timeZone,
-    enumerable: false,
-    configurable: true,
-    writable: false
-  }) as DateWithTimeZone;
-};
 
 const convertToText = (prop: string, value: ParameterValue, uid: string): string => {
   if (value === undefined) {
@@ -190,13 +181,7 @@ const getRecurrenceDates = (
     }
 
     for (const date of occurrences) {
-      const occurence: DateTime<true> | null = getDateTime({
-        dateWithTimeZone: createDateWithTimeZone(date, event.start.tz || undefined),
-        localTimeZone: localTimeZone,
-        fullDayEvent: event.datetype === "date",
-        keepOriginalZonedTime: true,
-        quiet: !showLuxonDebugInfo
-      });
+      const occurence: DateTime<true> | null = getDateTime(date, event.start.tz, localTimeZone, event.datetype === "date", !showLuxonDebugInfo);
       if (!occurence) {
         warn(`getRecurrenceDates: Invalid occurrence date for event UID '${event.uid}'. Skipping this occurrence.`);
         continue;
@@ -231,13 +216,7 @@ const getRecurrenceDates = (
     for (const recurrence of Object.values(event.recurrences)) {
       const recurStart: DateTime<true> | null =
         recurrence?.start instanceof Date
-          ? getDateTime({
-              dateWithTimeZone: createDateWithTimeZone(recurrence.start, recurrence.start.tz || undefined),
-              localTimeZone: localTimeZone,
-              fullDayEvent: event.datetype === "date",
-              keepOriginalZonedTime: true,
-              quiet: !showLuxonDebugInfo
-            })
+          ? getDateTime(recurrence.start, event.start.tz, localTimeZone, event.datetype === "date", !showLuxonDebugInfo)
           : null;
 
       const recurId: DateTimeMaybeValid | null = recurrence?.recurrenceid instanceof Date ? DateTime.fromJSDate(recurrence.recurrenceid) : null;
@@ -272,29 +251,6 @@ const getRecurrenceDates = (
   }
 
   return Array.from(instances.values()).sort((a: IcalOccurence, b: IcalOccurence) => a.occurenceStart.toMillis() - b.occurenceStart.toMillis());
-};
-
-const shouldKeepOriginalZonedTime = (
-  event: VEvent,
-  eventTimezone: string | undefined,
-  localTimezone: string,
-  isRecurrenceOverride: boolean = false
-): boolean => {
-  if ("APPLE-CREATOR-IDENTITY" in event) {
-    // NOTE: Apple Calendar needs special handling here because they store the timeZoned time as local time
-    return true;
-  }
-
-  if (isRecurrenceOverride) {
-    // for recurrence overrides, we always want to keep the original timezone to avoid shifting issues
-    return true;
-  }
-
-  /* NOTE: Exchange Calendar uses Windows timezones and node-ical replaces them with IANA timezones.
-           Exchange Calendar stores the timeZoned time as local time, same as with Apple Calendar.
-           Interesting to see if this breaks any timezone conversion out there.
-  */
-  return eventTimezone !== localTimezone;
 };
 
 export const getActiveEvents = (
@@ -332,20 +288,8 @@ export const getActiveEvents = (
     event.description = convertToText("description", event.description, event.uid);
     event.uid = convertToText("uid", event.uid, event.uid);
 
-    const startDate: DateTime<true> | null = getDateTime({
-      dateWithTimeZone: event.start,
-      localTimeZone: usedTZ,
-      fullDayEvent: event.datetype === "date",
-      keepOriginalZonedTime: shouldKeepOriginalZonedTime(event, event.start.tz, usedTZ),
-      quiet: !showLuxonDebugInfo
-    });
-    const endDate: DateTime<true> | null = getDateTime({
-      dateWithTimeZone: event.end,
-      localTimeZone: usedTZ,
-      fullDayEvent: event.datetype === "date",
-      keepOriginalZonedTime: shouldKeepOriginalZonedTime(event, event.end.tz, usedTZ),
-      quiet: !showLuxonDebugInfo
-    });
+    const startDate: DateTime<true> | null = getDateTime(event.start, event.start.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
+    const endDate: DateTime<true> | null = getDateTime(event.end, event.end.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
 
     if (!startDate || !endDate) {
       error(`getActiveEvents - DTSTART (${startDate}) and/or DTEND (${endDate}) is invalid on '${event.summary}' (${event.uid})`);
@@ -386,21 +330,15 @@ export const getActiveEvents = (
           currentEvent = currentEvent.recurrences[lookupKey] as VEvent;
           warn(`getActiveEvents - Found recurrence override for event UID '${event.uid}' on date '${lookupKey}'. Using overridden start/end.`);
 
-          currentStartDate = getDateTime({
-            dateWithTimeZone: createDateWithTimeZone(currentEvent.start, currentEvent.start.tz || undefined),
-            localTimeZone: usedTZ,
-            fullDayEvent: event.datetype === "date",
-            keepOriginalZonedTime: shouldKeepOriginalZonedTime(event, currentEvent.start.tz, usedTZ, true),
-            quiet: !showLuxonDebugInfo
-          });
+          currentStartDate = getDateTime(currentEvent.start, event.start.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
 
-          const overrideEndDate: DateTime<true> | null = getDateTime({
-            dateWithTimeZone: createDateWithTimeZone(currentEvent.end, currentEvent.end.tz || undefined),
-            localTimeZone: usedTZ,
-            fullDayEvent: event.datetype === "date",
-            keepOriginalZonedTime: shouldKeepOriginalZonedTime(event, currentEvent.end.tz, usedTZ, true),
-            quiet: !showLuxonDebugInfo
-          });
+          const overrideEndDate: DateTime<true> | null = getDateTime(
+            currentEvent.end,
+            event.end.tz,
+            usedTZ,
+            event.datetype === "date",
+            !showLuxonDebugInfo
+          );
 
           if (!currentStartDate || !overrideEndDate) {
             error(

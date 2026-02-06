@@ -116,6 +116,7 @@ dist
 .pnp.*
 
 # ignore calendar files
+calendars/*.ics
 contents/**/*.ics
 contents/**/*.json
 calendars.json
