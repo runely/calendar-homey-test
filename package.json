@@ -14,7 +14,7 @@
     "chalk": "^5.6.2",
     "lodash.clonedeep": "4.5.0",
     "luxon": "^3.7.2",
-    "node-ical": "0.24.2"
+    "node-ical": "0.25.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.14",
