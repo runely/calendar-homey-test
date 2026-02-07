@@ -296,7 +296,7 @@ export const getActiveEvents = (
 
     const eventEnd: DateWithTimeZone = event.end ?? event.start;
     if (!event.end) {
-      warn(`getActiveEvents - End is not specified on event UID '${event.uid}'. Using start as end.`);
+      warn(`getActiveEvents - End is not specified on event UID '${event.uid}'. Using start as end: ${event.start} (${event.start.tz || "undefined TZ"})`);
     }
 
     // set properties to be text value IF it's an object
@@ -309,7 +309,7 @@ export const getActiveEvents = (
     const endDate: DateTime<true> | null = getDateTime(eventEnd, eventEnd.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
 
     if (!startDate || !endDate) {
-      error(`getActiveEvents - start (${startDate}) and/or end (${endDate}) is invalid on '${event.summary}' (${event.uid})`);
+      error(`getActiveEvents - start (${startDate}) and/or end (${endDate}) is invalid on '${event.summary}' (${event.uid}). Skipping this event`);
 
       continue;
     }
@@ -361,7 +361,7 @@ export const getActiveEvents = (
 
           if (!currentStartDate || !overrideEndDate) {
             error(
-              `getActiveEvents - start and/or end is invalid on recurrence override for '${currentEvent.summary}' (${currentEvent.uid}) with lookupKey '${lookupKey}'`
+              `getActiveEvents - start and/or end is invalid on recurrence override for '${currentEvent.summary}' (${currentEvent.uid}) with lookupKey '${lookupKey}'. Skipping this recurrence`
             );
 
             continue;
