@@ -296,7 +296,9 @@ export const getActiveEvents = (
 
     const eventEnd: DateWithTimeZone = event.end ?? event.start;
     if (!event.end) {
-      warn(`getActiveEvents - End is not specified on event UID '${event.uid}'. Using start as end: ${event.start} (${event.start.tz || "undefined TZ"})`);
+      warn(
+        `getActiveEvents - End is not specified on event UID '${event.uid}'. Using start as end: ${event.start} (${event.start.tz || "undefined TZ"})`
+      );
     }
 
     // set properties to be text value IF it's an object
