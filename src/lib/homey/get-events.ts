@@ -12,7 +12,7 @@ const createDateFilename = (name: string, date: Date): string => {
   return `${name}_${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
 };
 
-const printEventsByIndex = (printEventByIndex: number, values: CalendarComponent[]): void => {
+const printEventsByIndex = (printEventByIndex: number, values: (CalendarComponent | undefined)[]): void => {
   if (printEventByIndex > values.length) {
     warn(`Requested event index (${printEventByIndex}) is greater than event length (${values.length}) present in calendar file`);
     return;
@@ -28,7 +28,7 @@ const printEventsByIndex = (printEventByIndex: number, values: CalendarComponent
   console.dir(value);
 };
 
-const printEventsByUids = (data: CalendarResponse, values: CalendarComponent[], printEventByUIDs: string[]): void => {
+const printEventsByUids = (data: CalendarResponse, values: (CalendarComponent | undefined)[], printEventByUIDs: string[]): void => {
   const lowerCasedKeys: string[] = Object.keys(data).map((k: string) => k.toLowerCase());
 
   for (const uid of printEventByUIDs) {
@@ -117,7 +117,7 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Cale
       console.dir(data);
     }
 
-    const values: CalendarComponent[] = Object.values(data);
+    const values: (CalendarComponent | undefined)[] = Object.values(data);
 
     if (options.printEventByIndex !== undefined && options.printEventByIndex > -1) {
       printEventsByIndex(options.printEventByIndex, values);
@@ -129,7 +129,7 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Cale
 
     const activeEvents: CalendarEvent[] = getActiveEvents(
       tz,
-      data,
+      values,
       eventLimit,
       logProperties,
       options.showLuxonDebugInfo || false,

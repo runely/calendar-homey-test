@@ -1,7 +1,7 @@
 import deepClone from "lodash.clonedeep";
 import { DateTime, type DateTimeMaybeValid, Duration } from "luxon";
 import type { Valid } from "luxon/src/_util";
-import type { CalendarComponent, CalendarResponse, ParameterValue, VEvent } from "node-ical";
+import type { CalendarComponent, DateWithTimeZone, ParameterValue, VEvent } from "node-ical";
 
 import { debug, error, info, warn } from "../../config.js";
 
@@ -16,8 +16,9 @@ import { hasData } from "./has-data.js";
 
 const untilRegexp = /UNTIL=(\d{8}T\d{6})/;
 
-const convertToText = (prop: string, value: ParameterValue, uid: string): string => {
+const convertToText = (prop: string, value: ParameterValue | undefined, uid: string): string => {
   if (value === undefined) {
+    warn(`getActiveEvents/convertToText - '${prop}' was undefined. Using empty string for '${uid}'`);
     return "";
   }
 
@@ -25,7 +26,7 @@ const convertToText = (prop: string, value: ParameterValue, uid: string): string
     return value;
   }
 
-  warn(`getActiveEvents/convertToText - '${prop}' has params. Using 'val' of ParameterValue '${uid}':`, value);
+  warn(`getActiveEvents/convertToText - '${prop}' has params. Using 'val' of ParameterValue for '${uid}':`, value);
   return value.val;
 };
 
@@ -62,7 +63,11 @@ const createNewEvent = (event: VEvent, start: DateTime<true>, end: DateTime<true
   return calendarEvent;
 };
 
-const filterOutUnwantedEvents = (events: CalendarComponent[], eventLimitStart: DateTime<Valid>, eventLimitEnd: DateTime<Valid>): VEvent[] => {
+const filterOutUnwantedEvents = (
+  events: (CalendarComponent | undefined)[],
+  eventLimitStart: DateTime<Valid>,
+  eventLimitEnd: DateTime<Valid>
+): VEvent[] => {
   const eventLimitStartMillis: number = eventLimitStart.toUTC().toJSDate().getTime();
   const eventLimitEndMillis: number = eventLimitEnd.toUTC().toJSDate().getTime();
 
@@ -75,7 +80,12 @@ const filterOutUnwantedEvents = (events: CalendarComponent[], eventLimitStart: D
   let recurringVEventsWithPastUntil: number = 0;
   let recurringVEventsWithFutureUntil: number = 0;
 
-  const filteredEvents: VEvent[] = events.filter((event: CalendarComponent) => {
+  const filteredEvents: VEvent[] = events.filter((event: CalendarComponent | undefined) => {
+    if (!event) {
+      nonVEvents++;
+      return false;
+    }
+
     // Needed to let TypeScript know that event is of type VEvent
     if (event.type !== "VEVENT") {
       nonVEvents++;
@@ -83,16 +93,16 @@ const filterOutUnwantedEvents = (events: CalendarComponent[], eventLimitStart: D
     }
 
     if (!event.rrule) {
-      if (!hasData(event.start) || !hasData(event.end)) {
+      if (!hasData(event.start)) {
         error(
-          `[ERROR] - getActiveEvents/filterOutUnwantedEvents: Missing DTSTART (${event.start} (${event.start?.tz || "undefined TZ"})) and/or DTEND (${event.end} (${event.end?.tz || "undefined TZ"})) on non-recurring event UID '${event.uid}'. Skipping event.`
+          `[ERROR] - getActiveEvents/filterOutUnwantedEvents: Missing DTSTART (${event.start} (${event.start?.tz || "undefined TZ"})) on non-recurring event UID '${event.uid}'. Skipping event.`
         );
         regularInvalidVEvents++;
         return false;
       }
 
       const startMillis: number = event.start.getTime();
-      const endMillis: number = event.end.getTime();
+      const endMillis: number = (event.end ?? event.start).getTime();
       const isRegularEventInside: boolean =
         (startMillis >= eventLimitStartMillis && endMillis <= eventLimitEndMillis) || // event fully inside range
         (startMillis <= eventLimitStartMillis && endMillis >= eventLimitEndMillis) || // event fully outside range (ongoing)
@@ -213,13 +223,15 @@ const getRecurrenceDates = (
   }
 
   if (event.recurrences) {
-    for (const recurrence of Object.values(event.recurrences)) {
-      const recurStart: DateTime<true> | null =
-        recurrence?.start instanceof Date
-          ? getDateTime(recurrence.start, event.start.tz, localTimeZone, event.datetype === "date", !showLuxonDebugInfo)
-          : null;
-
-      const recurId: DateTimeMaybeValid | null = recurrence?.recurrenceid instanceof Date ? DateTime.fromJSDate(recurrence.recurrenceid) : null;
+    for (const recurrence of Object.values(event.recurrences) as VEvent[]) {
+      const recurStart: DateTime<true> | null = getDateTime(
+        recurrence.start,
+        event.start.tz,
+        localTimeZone,
+        event.datetype === "date",
+        !showLuxonDebugInfo
+      );
+      const recurId: DateTimeMaybeValid | null = recurrence.recurrenceid instanceof Date ? DateTime.fromJSDate(recurrence.recurrenceid) : null;
 
       if (!recurStart || !recurId || !recurId.isValid) {
         warn(`getRecurrenceDates: Invalid recurrence or recurrenceId found for event UID '${event.uid}'. Skipping this recurrence.`);
@@ -255,7 +267,7 @@ const getRecurrenceDates = (
 
 export const getActiveEvents = (
   timezone: string | undefined,
-  data: CalendarResponse,
+  data: (CalendarComponent | undefined)[],
   eventLimit: IcalCalendarEventLimit,
   logProperties: IcalCalendarLogProperty[],
   showLuxonDebugInfo: boolean, // same as logAllEvents in calendar-homey
@@ -274,12 +286,17 @@ export const getActiveEvents = (
     `getActiveEvents: Using timezone '${usedTZ}' -- Event limit start: '${eventLimitStart.toFormat("dd.MM.yyyy HH:mm:ss")}' -- Event limit end: '${eventLimitEnd.toFormat("dd.MM.yyyy HH:mm:ss")}' -- logPropertiesCount: ${logProperties.length}`
   );
 
-  const actualEvents: VEvent[] = filterOutUnwantedEvents(Object.values(data), eventLimitStart, eventLimitEnd);
+  const actualEvents: VEvent[] = filterOutUnwantedEvents(data, eventLimitStart, eventLimitEnd);
 
   for (const event of actualEvents) {
     if (event.recurrenceid) {
       warn(`getActiveEvents - RecurrenceId for (${event.uid}) should be handled in getOccurrenceDates. Skipping.`);
       continue;
+    }
+
+    const eventEnd: DateWithTimeZone = event.end ?? event.start;
+    if (!event.end) {
+      warn(`getActiveEvents - End is not specified on event UID '${event.uid}'. Using start as end.`);
     }
 
     // set properties to be text value IF it's an object
@@ -289,10 +306,10 @@ export const getActiveEvents = (
     event.uid = convertToText("uid", event.uid, event.uid);
 
     const startDate: DateTime<true> | null = getDateTime(event.start, event.start.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
-    const endDate: DateTime<true> | null = getDateTime(event.end, event.end.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
+    const endDate: DateTime<true> | null = getDateTime(eventEnd, eventEnd.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
 
     if (!startDate || !endDate) {
-      error(`getActiveEvents - DTSTART (${startDate}) and/or DTEND (${endDate}) is invalid on '${event.summary}' (${event.uid})`);
+      error(`getActiveEvents - start (${startDate}) and/or end (${endDate}) is invalid on '${event.summary}' (${event.uid})`);
 
       continue;
     }
@@ -332,9 +349,11 @@ export const getActiveEvents = (
 
           currentStartDate = getDateTime(currentEvent.start, event.start.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
 
+          const currentEventEnd: DateWithTimeZone = currentEvent.end ?? currentEvent.start;
+
           const overrideEndDate: DateTime<true> | null = getDateTime(
-            currentEvent.end,
-            event.end.tz,
+            currentEventEnd,
+            eventEnd.tz,
             usedTZ,
             event.datetype === "date",
             !showLuxonDebugInfo
@@ -342,7 +361,7 @@ export const getActiveEvents = (
 
           if (!currentStartDate || !overrideEndDate) {
             error(
-              `getActiveEvents - DTSTART and/or DTEND is invalid on RECURRENCE OVERRIDE for '${currentEvent.summary}' (${currentEvent.uid}) with lookupKey '${lookupKey}'`
+              `getActiveEvents - start and/or end is invalid on recurrence override for '${currentEvent.summary}' (${currentEvent.uid}) with lookupKey '${lookupKey}'`
             );
 
             continue;
@@ -367,7 +386,6 @@ export const getActiveEvents = (
             if (prop === "event") {
               console.log(prop.toUpperCase(), `for '${event.summary}' :`, currentEvent);
             } else {
-              // @ts-expect-error
               console.log(prop.toUpperCase(), `in '${event.summary}' :`, currentEvent[prop]);
             }
           });
@@ -397,7 +415,6 @@ export const getActiveEvents = (
       if (prop === "event") {
         console.log(prop.toUpperCase(), `for '${event.summary}' :`, event);
       } else {
-        // @ts-expect-error
         console.log(prop.toUpperCase(), `in '${event.summary}' :`, event[prop]);
       }
     });

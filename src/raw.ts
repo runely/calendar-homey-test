@@ -31,10 +31,11 @@ import type { IcalCalendarImport } from "./types/IcalCalendarImport";
   for await (const calendar of calendars) {
     warn("Fetching data for", calendar.name);
     const data: CalendarResponse = calendar.options.isLocalFile ? nodeIcal.parseFile(calendar.uri) : await nodeIcal.fromURL(calendar.uri);
+    const values: (CalendarComponent | undefined)[] = Object.values(data);
 
     if (showOnlyTheseUids.length > 0) {
-      const rawEvents: VEvent[] = Object.values(data).filter(
-        (ev: CalendarComponent) => ev.type === "VEVENT" && showOnlyTheseUids.includes(ev.uid)
+      const rawEvents: VEvent[] = values.filter(
+        (ev: CalendarComponent | undefined) => ev?.type === "VEVENT" && showOnlyTheseUids.includes(ev.uid)
       ) as VEvent[];
       warn("Showing only raw events starting with these UIDs:", showOnlyTheseUids);
       console.log(rawEvents);
@@ -44,7 +45,7 @@ import type { IcalCalendarImport } from "./types/IcalCalendarImport";
 
     const activeData: CalendarEvent[] = getActiveEvents(
       calendar.tz,
-      data,
+      values,
       calendar.eventLimit,
       calendar.logProperties,
       calendar.options.showLuxonDebugInfo || false,
