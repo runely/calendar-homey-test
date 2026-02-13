@@ -65,4 +65,4 @@ export const debug = (message: string, ...additional: unknown[]): void => {
  */
 export const dataInfo = (message: string, ...additional: unknown[]): void => {
   console.log(chalk.green(message), additional);
-}
+};
