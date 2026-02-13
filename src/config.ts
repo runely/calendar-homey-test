@@ -56,3 +56,13 @@ export const error = (message: string, ...additional: unknown[]): void => {
 export const debug = (message: string, ...additional: unknown[]): void => {
   console.log(chalk.cyan(message, additional));
 };
+
+/**
+ * Log a data info message to console
+ *
+ * @param message - Message to be written out to console
+ * @param additional - Any number of additional info to log out
+ */
+export const dataInfo = (message: string, ...additional: unknown[]): void => {
+  console.log(chalk.green(message), additional);
+}

@@ -3,7 +3,7 @@ import { DateTime, type DateTimeMaybeValid, Duration } from "luxon";
 import type { Valid } from "luxon/src/_util";
 import type { CalendarComponent, DateWithTimeZone, ParameterValue, VEvent } from "node-ical";
 
-import { debug, error, info, warn } from "../../config.js";
+import { dataInfo, debug, error, info, warn } from "../../config.js";
 
 import type { BusyStatus, CalendarEvent, IcalOccurence } from "../../types/IcalCalendar";
 import type { IcalCalendarEventLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport";
@@ -386,9 +386,9 @@ export const getActiveEvents = (
         if (!logged && Array.isArray(logProperties) && logProperties.length > 0) {
           logProperties.forEach((prop: IcalCalendarLogProperty) => {
             if (prop === "event") {
-              console.log(prop.toUpperCase(), `for '${event.summary}' :`, currentEvent);
-            } else {
-              console.log(prop.toUpperCase(), `in '${event.summary}' :`, currentEvent[prop]);
+              dataInfo(`${event.uid} - ${prop.toUpperCase()} for '${event.summary}' :`, currentEvent);
+            } else if (prop in currentEvent && currentEvent[prop] !== undefined) {
+              dataInfo(`${event.uid} - ${prop.toUpperCase()} in '${event.summary}' :`, currentEvent[prop]);
             }
           });
           logged = true;
@@ -415,9 +415,9 @@ export const getActiveEvents = (
 
     logProperties.forEach((prop: IcalCalendarLogProperty) => {
       if (prop === "event") {
-        console.log(prop.toUpperCase(), `for '${event.summary}' :`, event);
-      } else {
-        console.log(prop.toUpperCase(), `in '${event.summary}' :`, event[prop]);
+        dataInfo(`${event.uid} - ${prop.toUpperCase()} for '${event.summary}' :`, event);
+      } else if (prop in event && event[prop] !== undefined) {
+        dataInfo(`${event.uid} - ${prop.toUpperCase()} in '${event.summary}' :`, event[prop]);
       }
     });
 
