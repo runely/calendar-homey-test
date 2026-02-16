@@ -48,8 +48,7 @@ import type { IcalCalendarImport } from "./types/IcalCalendarImport";
       values,
       calendar.eventLimit,
       calendar.logProperties,
-      calendar.options.showLuxonDebugInfo || false,
-      calendar.options.printOccurrences || false
+      calendar.options.showLuxonDebugInfo || false
     );
 
     if (showOnlyTheseUids.length > 0) {

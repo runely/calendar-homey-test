@@ -32,11 +32,6 @@ export type HasDataTruthyType = boolean | number | [] | string | object;
 
 export type HasDataType = HasDataFalsyType | HasDataTruthyType;
 
-export type IcalOccurence = {
-  occurenceStart: DateTime<true>;
-  lookupKey: string;
-};
-
 export type NextEvent = {
   calendarName: string;
   endsIn: number;

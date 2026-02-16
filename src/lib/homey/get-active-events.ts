@@ -1,11 +1,10 @@
-import deepClone from "lodash.clonedeep";
 import { DateTime, type DateTimeMaybeValid, Duration } from "luxon";
-import type { Valid } from "luxon/src/_util";
-import type { CalendarComponent, DateWithTimeZone, ParameterValue, VEvent } from "node-ical";
+import type { CalendarComponent, EventInstance, ParameterValue, VEvent } from "node-ical";
+import nodeICal from "node-ical";
 
 import { dataInfo, debug, error, info, warn } from "../../config.js";
 
-import type { BusyStatus, CalendarEvent, IcalOccurence } from "../../types/IcalCalendar";
+import type { BusyStatus, CalendarEvent } from "../../types/IcalCalendar";
 import type { IcalCalendarEventLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport";
 
 import { getDateTime, getZonedDateTime, guessTimezone } from "../luxon-fns.js";
@@ -30,7 +29,7 @@ const convertToText = (prop: string, value: ParameterValue | undefined, uid: str
   return value.val;
 };
 
-const createNewEvent = (event: VEvent, start: DateTime<true>, end: DateTime<true>): CalendarEvent => {
+const createNewEvent = (event: VEvent, start: DateTime<true>, end: DateTime<true>, uid: string, isFullDay: boolean): CalendarEvent => {
   // dig out free/busy status (if any)
   const freeBusy: BusyStatus | undefined = extractFreeBusy(event);
 
@@ -43,11 +42,11 @@ const createNewEvent = (event: VEvent, start: DateTime<true>, end: DateTime<true
     start: start.setLocale("nb-NO"),
     dateType: event.datetype,
     end: end.setLocale("nb-NO"),
-    uid: event.uid,
+    uid,
     description: convertToText("description", event.description, event.uid),
     location: convertToText("location", event.location, event.uid),
     summary: convertToText("summary", event.summary, event.uid),
-    fullDayEvent: event.datetype === "date"
+    fullDayEvent: isFullDay
   };
 
   // TODO: Any point in adding created date?
@@ -65,8 +64,8 @@ const createNewEvent = (event: VEvent, start: DateTime<true>, end: DateTime<true
 
 const filterOutUnwantedEvents = (
   events: (CalendarComponent | undefined)[],
-  eventLimitStart: DateTime<Valid>,
-  eventLimitEnd: DateTime<Valid>
+  eventLimitStart: DateTime<true>,
+  eventLimitEnd: DateTime<true>
 ): VEvent[] => {
   const eventLimitStartMillis: number = eventLimitStart.toUTC().toJSDate().getTime();
   const eventLimitEndMillis: number = eventLimitEnd.toUTC().toJSDate().getTime();
@@ -160,118 +159,12 @@ const filterOutUnwantedEvents = (
   return filteredEvents;
 };
 
-const getClonedEvent = (event: VEvent): VEvent => {
-  const clonedEvent: VEvent = deepClone(event) as VEvent;
-  clonedEvent.start = event.start;
-  clonedEvent.end = event.end;
-  clonedEvent.created = event.created;
-  clonedEvent.dtstamp = event.dtstamp;
-  clonedEvent.lastmodified = event.lastmodified;
-  clonedEvent.rrule = event.rrule;
-  clonedEvent.recurrences = event.recurrences;
-  clonedEvent.exdate = event.exdate;
-
-  return clonedEvent;
-};
-
-const getRecurrenceDates = (
-  event: VEvent,
-  eventLimitStart: DateTime<true>,
-  eventLimitEnd: DateTime<true>,
-  localTimeZone: string,
-  showLuxonDebugInfo: boolean,
-  printOccurrences: boolean
-): IcalOccurence[] => {
-  const instances = new Map<string, IcalOccurence>();
-
-  if (event.rrule) {
-    const occurrences: Date[] = event.rrule.between(eventLimitStart.toJSDate(), eventLimitEnd.toJSDate(), true);
-    if (printOccurrences) {
-      console.log("occurrences", occurrences);
-    }
-
-    for (const date of occurrences) {
-      const occurence: DateTime<true> | null = getDateTime(date, event.start.tz, localTimeZone, event.datetype === "date", !showLuxonDebugInfo);
-      if (!occurence) {
-        warn(`getRecurrenceDates: Invalid occurrence date for event UID '${event.uid}'. Skipping this occurrence.`);
-        continue;
-      }
-
-      const occurenceUtc: DateTime<true> = occurence.toUTC();
-      const occurenceStamp: string | null = occurenceUtc.toISO();
-      const lookupKey: string | null = occurenceUtc.toISODate();
-      if (!occurenceStamp || !lookupKey) {
-        warn(`getRecurrenceDates: Invalid occurrenceStamp or lookupKey for event UID '${event.uid}'. Skipping this occurrence.`);
-        continue;
-      }
-
-      if (event.recurrences?.[lookupKey]) {
-        warn(`getRecurrenceDates: Recurrence override found for event UID '${event.uid}' on date '${lookupKey}'. Skipping occurrence.`);
-        continue;
-      }
-
-      if (instances.has(occurenceStamp)) {
-        warn(`getRecurrenceDates: Duplicate occurrence found for event UID '${event.uid}' on date '${lookupKey}'. Skipping duplicate.`);
-        continue;
-      }
-
-      instances.set(occurenceStamp, {
-        occurenceStart: occurence,
-        lookupKey
-      });
-    }
-  }
-
-  if (event.recurrences) {
-    for (const recurrence of Object.values(event.recurrences) as VEvent[]) {
-      const recurStart: DateTime<true> | null = getDateTime(
-        recurrence.start,
-        event.start.tz,
-        localTimeZone,
-        event.datetype === "date",
-        !showLuxonDebugInfo
-      );
-      const recurId: DateTimeMaybeValid | null = recurrence.recurrenceid instanceof Date ? DateTime.fromJSDate(recurrence.recurrenceid) : null;
-
-      if (!recurStart || !recurId || !recurId.isValid) {
-        warn(`getRecurrenceDates: Invalid recurrence or recurrenceId found for event UID '${event.uid}'. Skipping this recurrence.`);
-        continue;
-      }
-
-      if (!(recurStart.toMillis() >= eventLimitStart.toMillis() && recurStart.toMillis() <= eventLimitEnd.toMillis())) {
-        continue;
-      }
-
-      const recurUtc: DateTime<true> = recurStart.toUTC();
-      const recurUtcIso: string | null = recurUtc.toISODate();
-      if (!recurUtcIso) {
-        warn(`getRecurrenceDates: Invalid recurUtcIso for event UID '${event.uid}'. Skipping this recurrence.`);
-        continue;
-      }
-
-      const recurStamp: string | null = recurUtc.toISO();
-      if (!recurStamp) {
-        warn(`getRecurrenceDates: Invalid recurStamp for event UID '${event.uid}'. Skipping this recurrence.`);
-        continue;
-      }
-
-      instances.set(recurStamp, {
-        occurenceStart: recurStart,
-        lookupKey: recurUtcIso
-      });
-    }
-  }
-
-  return Array.from(instances.values()).sort((a: IcalOccurence, b: IcalOccurence) => a.occurenceStart.toMillis() - b.occurenceStart.toMillis());
-};
-
 export const getActiveEvents = (
   timezone: string | undefined,
   data: (CalendarComponent | undefined)[],
   eventLimit: IcalCalendarEventLimit,
   logProperties: IcalCalendarLogProperty[],
-  showLuxonDebugInfo: boolean, // same as logAllEvents in calendar-homey
-  printOccurrences: boolean
+  showLuxonDebugInfo: boolean // same as logAllEvents in calendar-homey
 ): CalendarEvent[] => {
   const usedTZ: string = timezone || guessTimezone();
   const eventLimitStart: DateTime<true> = getZonedDateTime(DateTime.now(), usedTZ).startOf("day");
@@ -288,140 +181,99 @@ export const getActiveEvents = (
 
   const actualEvents: VEvent[] = filterOutUnwantedEvents(data, eventLimitStart, eventLimitEnd);
 
+  const loggedEventUids: Set<string> = new Set();
+
   for (const event of actualEvents) {
-    if (event.recurrenceid) {
-      warn(`getActiveEvents - RecurrenceId for (${event.uid}) should be handled in getOccurrenceDates. Skipping.`);
+    const eventInstances: EventInstance[] = nodeICal.expandRecurringEvent(event, {
+      excludeExdates: true,
+      expandOngoing: true,
+      includeOverrides: true,
+      from: eventLimitStart.toJSDate(),
+      to: eventLimitEnd.toJSDate()
+    });
+
+    if (eventInstances.length === 0) {
+      warn(`getActiveEvents - No event instances found for event UID '${event.uid}' after expanding events. Skipping event.`);
       continue;
     }
 
-    const eventEnd: DateWithTimeZone = event.end ?? event.start;
-    if (!event.end) {
-      warn(
-        `getActiveEvents - End is not specified on event UID '${event.uid}'. Using start as end: ${event.start} (${event.start.tz || "undefined TZ"})`
-      );
-    }
+    const fixedEventUids: Set<string> = new Set();
 
-    // set properties to be text value IF it's an object
-    event.summary = convertToText("summary", event.summary, event.uid);
-    event.location = convertToText("location", event.location, event.uid);
-    event.description = convertToText("description", event.description, event.uid);
-    event.uid = convertToText("uid", event.uid, event.uid);
+    for (const eventInstance of eventInstances) {
+      if (!fixedEventUids.has(eventInstance.event.uid)) {
+        // set properties to be text value IF it's an object
+        eventInstance.event.uid = convertToText("uid", eventInstance.event.uid, eventInstance.event.uid);
+        eventInstance.event.summary = convertToText("summary", eventInstance.summary, eventInstance.event.uid);
+        eventInstance.event.location = convertToText("location", eventInstance.event.location, eventInstance.event.uid);
+        eventInstance.event.description = convertToText("description", eventInstance.event.description, eventInstance.event.uid);
 
-    const startDate: DateTime<true> | null = getDateTime(event.start, event.start.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
-    const endDate: DateTime<true> | null = getDateTime(eventEnd, eventEnd.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
+        fixedEventUids.add(eventInstance.event.uid);
+      }
 
-    if (!startDate || !endDate) {
-      error(`getActiveEvents - start (${startDate}) and/or end (${endDate}) is invalid on '${event.summary}' (${event.uid}). Skipping this event`);
+      eventInstance.summary = eventInstance.event.summary; // ensure eventInstance summary is converted to text as well
 
-      continue;
-    }
+      const eventEndTz: string | undefined = eventInstance.end?.tz || eventInstance.start.tz;
+      if (!eventInstance.end) {
+        warn(
+          `getActiveEvents - End is not specified on event UID '${eventInstance.event.uid}'. Using start TZ as end TZ: ${eventInstance.event.start.tz || "undefined TZ"}`
+        );
+      }
 
-    if (event.rrule) {
-      // Recurring event
-      let logged: boolean = false;
-      const recurrenceDates: IcalOccurence[] = getRecurrenceDates(
-        event,
-        eventLimitStart,
-        eventLimitEnd,
+      if (Array.isArray(logProperties) && logProperties.length > 0 && !loggedEventUids.has(eventInstance.event.uid)) {
+        logProperties.forEach((prop: IcalCalendarLogProperty) => {
+          if (prop === "event") {
+            dataInfo(`${eventInstance.event.uid} - ${prop.toUpperCase()} for '${eventInstance.summary}' :`, eventInstance);
+          } else if (prop in eventInstance.event && eventInstance.event[prop] !== undefined) {
+            dataInfo(`${eventInstance.event.uid} - ${prop.toUpperCase()} in '${eventInstance.summary}' :`, eventInstance.event[prop]);
+          }
+        });
+
+        console.log("Adding", eventInstance.event.uid);
+        loggedEventUids.add(eventInstance.event.uid);
+      }
+
+      dataInfo("getActiveEvents - Original event start / end :", eventInstance.start.toISOString(), eventInstance.end.toISOString());
+      const startDate: DateTime<true> | null = getDateTime(
+        eventInstance.start,
+        eventInstance.event.start.tz,
         usedTZ,
-        showLuxonDebugInfo,
-        printOccurrences
+        eventInstance.isFullDay,
+        !showLuxonDebugInfo
       );
+      const endDate: DateTime<true> | null = getDateTime(eventInstance.end, eventEndTz, usedTZ, eventInstance.isFullDay, !showLuxonDebugInfo);
 
-      if (recurrenceDates.length === 0) {
-        warn(`getActiveEvents - No recurrence dates in time range found for event UID '${event.uid}'. Skipping this recurring event.`);
+      if (!startDate || !endDate) {
+        error(
+          `getActiveEvents - start (${startDate}) and/or end (${endDate}) is invalid on '${eventInstance.summary}' (${eventInstance.event.uid}). Skipping this event`
+        );
 
         continue;
       }
 
-      for (const { occurenceStart, lookupKey } of recurrenceDates) {
-        if (event.exdate?.[lookupKey]) {
-          warn(`getActiveEvents - ExDate found for event UID '${event.uid}' on date '${lookupKey}'. Skipping this recurrence.`);
-          continue;
-        }
-
-        let currentEvent: VEvent = getClonedEvent(event);
-        let currentDuration: Duration<true> = endDate.diff(startDate);
-        let currentStartDate: DateTime<true> | null = occurenceStart;
-
-        if (currentEvent.recurrences?.[lookupKey]) {
-          // we found an override, so for this recurrence, use a potentially different start/end.
-          currentEvent = currentEvent.recurrences[lookupKey] as VEvent;
-          warn(`getActiveEvents - Found recurrence override for event UID '${event.uid}' on date '${lookupKey}'. Using overridden start/end.`);
-
-          currentStartDate = getDateTime(currentEvent.start, event.start.tz, usedTZ, event.datetype === "date", !showLuxonDebugInfo);
-
-          const currentEventEnd: DateWithTimeZone = currentEvent.end ?? currentEvent.start;
-
-          const overrideEndDate: DateTime<true> | null = getDateTime(
-            currentEventEnd,
-            eventEnd.tz,
-            usedTZ,
-            event.datetype === "date",
-            !showLuxonDebugInfo
-          );
-
-          if (!currentStartDate || !overrideEndDate) {
-            error(
-              `getActiveEvents - start and/or end is invalid on recurrence override for '${currentEvent.summary}' (${currentEvent.uid}) with lookupKey '${lookupKey}'. Skipping this recurrence`
-            );
-
-            continue;
-          }
-
-          currentDuration = overrideEndDate.diff(currentStartDate);
-        }
-
-        const currentEndDate: DateTime<true> = currentStartDate.plus(currentDuration);
-
-        if (currentEndDate.toMillis() < eventLimitStart.toMillis() || currentStartDate.toMillis() > eventLimitEnd.toMillis()) {
-          warn(
-            `getActiveEvents - Recurrence occurence is not inside event limit on event UID '${event.uid}' on date '${lookupKey}'. Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentStartDate.toISO()} (${currentStartDate.zoneName})). End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentEndDate.toISO()} (${currentEndDate.zoneName})). Skipping this recurrence.`
-          );
-          continue;
-        }
-
+      if (eventInstance.isRecurring) {
         recurrenceEventCount++;
 
-        if (!logged && Array.isArray(logProperties) && logProperties.length > 0) {
-          logProperties.forEach((prop: IcalCalendarLogProperty) => {
-            if (prop === "event") {
-              dataInfo(`${event.uid} - ${prop.toUpperCase()} for '${event.summary}' :`, currentEvent);
-            } else if (prop in currentEvent && currentEvent[prop] !== undefined) {
-              dataInfo(`${event.uid} - ${prop.toUpperCase()} in '${event.summary}' :`, currentEvent[prop]);
-            }
-          });
-          logged = true;
-        }
-
         // NOTE: IF toISODate fails, fallback month will be a single digit IF month is < 10
-        const startDateIso: string = currentStartDate.toISODate() || `${currentStartDate.year}-${currentStartDate.month}-${currentStartDate.day}`;
-        currentEvent.uid = `${currentEvent.uid}_${startDateIso}`;
+        const startDateIso: string = startDate.toISODate() || `${startDate.year}-${startDate.month}-${startDate.day}`;
+        const recurringEventUid = `${eventInstance.event.uid}_${startDateIso}`;
 
         info(
-          `getActiveEvents - Recurrence Summary: '${currentEvent.summary}' -- Start: '${currentStartDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentStartDate.toISO()} (${currentStartDate.zoneName})) -- End: '${currentEndDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${currentEndDate.toISO()} (${currentEndDate.zoneName})) -- UID: '${currentEvent.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
+          `getActiveEvents - Recurrence Summary: '${eventInstance.summary}' -- Start: '${startDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${startDate.toISO()} (${startDate.zoneName})) -- End: '${endDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${endDate.toISO()} (${endDate.zoneName})) -- UID: '${recurringEventUid}' -- DateType: '${eventInstance.isFullDay ? "FULL DAY" : "PARTIAL DAY"}'`
         );
-        events.push(createNewEvent(currentEvent, currentStartDate, currentEndDate));
+
+        events.push(createNewEvent(eventInstance.event, startDate, endDate, recurringEventUid, eventInstance.isFullDay));
+
+        continue;
       }
 
-      continue;
+      regularEventCount++;
+
+      info(
+        `getActiveEvents - Summary: '${eventInstance.summary}' -- Start: '${startDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${startDate.toISO()} (${startDate.zoneName})) -- End: '${endDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${endDate.toISO()} (${endDate.zoneName})) -- UID: '${eventInstance.event.uid}' -- DateType: '${eventInstance.isFullDay ? "FULL DAY" : "PARTIAL DAY"}'`
+      );
+
+      events.push(createNewEvent(eventInstance.event, startDate, endDate, eventInstance.event.uid, eventInstance.isFullDay));
     }
-
-    regularEventCount++;
-
-    info(
-      `getActiveEvents - Summary: '${event.summary}' -- Start: '${startDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${startDate.toISO()} (${startDate.zoneName})) -- End: '${endDate.toFormat("dd.MM.yyyy HH:mm:ss")}' (${endDate.toISO()} (${endDate.zoneName})) -- UID: '${event.uid}' -- DateType: '${event.datetype === "date" ? "FULL DAY" : "PARTIAL DAY"}'`
-    );
-
-    logProperties.forEach((prop: IcalCalendarLogProperty) => {
-      if (prop === "event") {
-        dataInfo(`${event.uid} - ${prop.toUpperCase()} for '${event.summary}' :`, event);
-      } else if (prop in event && event[prop] !== undefined) {
-        dataInfo(`${event.uid} - ${prop.toUpperCase()} in '${event.summary}' :`, event[prop]);
-      }
-    });
-
-    events.push(createNewEvent(event, startDate, endDate));
   }
 
   debug(`get-active-events: Recurrences: ${recurrenceEventCount} -- Regulars: ${regularEventCount}`);

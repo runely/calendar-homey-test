@@ -40,7 +40,6 @@ This Node.js app will let you test [IcalCalendar](https://github.com/runely/cale
                         "printAllEvents": false,
                         "printEventByIndex": -1,
                         "printEventByUIDs": [],
-                        "printOccurrences": false,
                         "saveActive": false,
                         "saveAll": false,
                         "showLuxonDebugInfo": true,
@@ -102,10 +101,6 @@ Print event by index to console:
 Print event by UIDs to console:
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `printEventByUIDs` from **[]** to **["UID-of-event-1","UID-of-event-2"]**
-
-Print occurrences to console:
-1. Open `calendars.json` and find the calendar you want to adjust
-2. Change `printOccurrences` from **false** to **true**
 
 If you want to save active events retrieved/parsed through [node-ical](https://github.com/jens-maus/node-ical):
 1. Open `calendars.json` and find the calendar you want to adjust
