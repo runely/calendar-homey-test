@@ -112,12 +112,12 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Cale
       warn("Raw file saved");
     }
 
+    const values: (CalendarComponent | undefined)[] = Object.values(data);
+
     if (options.printAllEvents) {
       info("Print of all events:");
-      console.dir(data);
+      console.dir(values.filter((v: CalendarComponent | undefined) => v !== undefined && v.type === "VEVENT"));
     }
-
-    const values: (CalendarComponent | undefined)[] = Object.values(data);
 
     if (options.printEventByIndex !== undefined && options.printEventByIndex > -1) {
       printEventsByIndex(options.printEventByIndex, values);
