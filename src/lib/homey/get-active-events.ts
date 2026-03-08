@@ -25,7 +25,7 @@ const convertToText = (prop: string, value: ParameterValue | undefined, uid: str
     return value;
   }
 
-  warn(`getActiveEvents/convertToText - '${prop}' has params. Using 'val' of ParameterValue for '${uid}':`, value);
+  warn(`getActiveEvents/convertToText - '${prop}' has params. Using 'val' of ParameterValue for '${uid}':`, JSON.stringify(value));
   return value.val;
 };
 
