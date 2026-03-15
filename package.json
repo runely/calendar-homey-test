@@ -13,12 +13,12 @@
   "dependencies": {
     "chalk": "^5.6.2",
     "luxon": "^3.7.2",
-    "node-ical": "0.25.5"
+    "node-ical": "0.25.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.6",
+    "@biomejs/biome": "2.4.7",
     "@types/luxon": "^3.7.1",
-    "@types/node": "^25.3.5",
+    "@types/node": "^25.5.0",
     "typescript": "^5.9.3"
   },
   "scripts": {
