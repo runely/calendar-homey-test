@@ -1,6 +1,6 @@
 import chalk from "chalk";
 
-import type { IcalCalendarImport } from "./types/IcalCalendarImport";
+import type { IcalCalendarImport } from "./types/IcalCalendarImport.js";
 
 export const getCalendars = async (): Promise<IcalCalendarImport[]> => {
   try {

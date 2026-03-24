@@ -1,4 +1,4 @@
-import type { Calendar, CalendarEvent } from "../../types/IcalCalendar";
+import type { Calendar, CalendarEvent } from "../../types/IcalCalendar.js";
 
 const sortEvents = (a: CalendarEvent, b: CalendarEvent) => {
   return a.start.diff(b.start).milliseconds;

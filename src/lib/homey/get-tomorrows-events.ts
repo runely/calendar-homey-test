@@ -1,14 +1,13 @@
 import { DateTime } from "luxon";
 
-import type { Valid } from "luxon/src/_util";
-import type { Calendar, CalendarEvent, CalendarEventExtended } from "../../types/IcalCalendar";
+import type { Calendar, CalendarEvent, CalendarEventExtended } from "../../types/IcalCalendar.js";
 
 import { getZonedDateTime } from "../luxon-fns.js";
 import { sortCalendarEvents } from "./sort-events.js";
 
 export const getEventsTomorrow = (calendars: Calendar[], timezone: string | undefined): CalendarEventExtended[] => {
   const eventsTomorrow: CalendarEventExtended[] = [];
-  const tomorrowStart: DateTime<Valid> = getZonedDateTime(DateTime.local(), timezone || "UTC")
+  const tomorrowStart: DateTime<true> = getZonedDateTime(DateTime.local(), timezone || "UTC")
     .plus({ day: 1 })
     .startOf("day");
 

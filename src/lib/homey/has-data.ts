@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 
-import type { HasDataType } from "../../types/IcalCalendar";
+import type { HasDataType } from "../../types/IcalCalendar.js";
 
 export const hasData = (data: HasDataType): boolean => {
   if (data === undefined || data === null) {

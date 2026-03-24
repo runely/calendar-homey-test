@@ -4,8 +4,8 @@ import nodeICal from "node-ical";
 
 import { dataInfo, debug, error, info, warn } from "../../config.js";
 
-import type { BusyStatus, CalendarEvent } from "../../types/IcalCalendar";
-import type { IcalCalendarEventLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport";
+import type { BusyStatus, CalendarEvent } from "../../types/IcalCalendar.js";
+import type { IcalCalendarEventLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport.js";
 
 import { getDateTime, getZonedDateTime, guessTimezone } from "../luxon-fns.js";
 

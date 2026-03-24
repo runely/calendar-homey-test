@@ -1,5 +1,5 @@
 import type { VEvent } from "node-ical";
-import type { BusyStatus } from "../../types/IcalCalendar";
+import type { BusyStatus } from "../../types/IcalCalendar.js";
 
 export const extractFreeBusy = (event: VEvent): BusyStatus | undefined => {
   if ("MICROSOFT-CDO-BUSYSTATUS" in event) {

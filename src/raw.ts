@@ -14,8 +14,8 @@ import nodeIcal, { type CalendarComponent, type CalendarResponse, type VEvent } 
 import { debug, error, getCalendars, warn } from "./config.js";
 import { getActiveEvents } from "./lib/homey/get-active-events.js";
 
-import type { CalendarEvent } from "./types/IcalCalendar";
-import type { IcalCalendarImport } from "./types/IcalCalendarImport";
+import type { CalendarEvent } from "./types/IcalCalendar.js";
+import type { IcalCalendarImport } from "./types/IcalCalendarImport.js";
 
 (async () => {
   const calendars: IcalCalendarImport[] = await getCalendars();

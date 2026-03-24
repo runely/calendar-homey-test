@@ -5,8 +5,8 @@ import { getNextEvent } from "./lib/homey/get-next-event.js";
 import { getEventsToday } from "./lib/homey/get-todays-events.js";
 import { getEventsTomorrow } from "./lib/homey/get-tomorrows-events.js";
 import { sortCalendars } from "./lib/homey/sort-events.js";
-import type { Calendar, CalendarEvent, CalendarEventExtended, NextEvent } from "./types/IcalCalendar";
-import type { IcalCalendarImport } from "./types/IcalCalendarImport";
+import type { Calendar, CalendarEvent, CalendarEventExtended, NextEvent } from "./types/IcalCalendar.js";
+import type { IcalCalendarImport } from "./types/IcalCalendarImport.js";
 
 const valInArr = (val: string, arr: string[]): boolean => {
   return arr.indexOf(val) > -1;

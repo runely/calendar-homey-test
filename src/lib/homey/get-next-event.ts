@@ -1,14 +1,13 @@
 import { DateTime } from "luxon";
 
-import type { Valid } from "luxon/src/_util";
-import type { Calendar, CalendarEvent, NextEvent } from "../../types/IcalCalendar";
+import type { Calendar, CalendarEvent, NextEvent } from "../../types/IcalCalendar.js";
 
 import { getZonedDateTime } from "../luxon-fns.js";
 
 export const getNextEvent = (calendars: Calendar[], timezone: string | undefined): NextEvent | null => {
   let minutesUntilStart: number = 1057885015800000;
   let nextEvent: NextEvent | null = null;
-  const now: DateTime<Valid> = getZonedDateTime(DateTime.local(), timezone || "UTC");
+  const now: DateTime<true> = getZonedDateTime(DateTime.local(), timezone || "UTC");
 
   calendars.forEach((calendar: Calendar) => {
     calendar.events.forEach((event: CalendarEvent) => {
