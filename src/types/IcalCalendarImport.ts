@@ -51,7 +51,7 @@ export type IcalCalendarLogProperty =
   | "APPLE-TRAVEL-ADVISORY-BEHAVIOR"
   | "APPLE-TRAVEL-START";
 
-export type IcalCalendarEventLimit = {
+export type IcalCalendarLimit = {
   value: number;
   type: DurationUnit;
 };
@@ -60,8 +60,9 @@ export type IcalCalendarImport = {
   name: string;
   uri: string;
   import: boolean;
-  eventLimit: IcalCalendarEventLimit;
+  eventLimit: IcalCalendarLimit;
   options: {
+    eventStartThreshold?: IcalCalendarLimit;
     isLocalFile?: boolean;
     downloadIcs?: boolean;
     saveAll?: boolean;

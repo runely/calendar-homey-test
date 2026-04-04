@@ -35,6 +35,10 @@ This Node.js app will let you test [IcalCalendar](https://github.com/runely/cale
                         "type": "months"
                     },
                     "options": {
+                        "eventStartThreshold": {
+                            "value": 0,
+                            "type": "weeks"
+                        },
                         "downloadIcs": false,
                         "isLocalFile": false,
                         "printAllEvents": false,
@@ -79,6 +83,12 @@ To change how far into the future you want to retrieve events:
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `value` to any number and `type` to one of the predefined types:
     1. "year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second" | "millisecond"
+
+To change how far back in the past events are retrieved from:
+1. Open `calendars.json` and find the calendar you want to adjust
+2. Add `eventStartThreshold` as shown above in to the `options` object and change `value` to any number and `type` to one of the predefined types:
+    1. "year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second" | "millisecond"
+3. If set to `0` and any of the predefined types, events from **now** will be retrieved. If set to anything higher than `0`, events starting from that point in the past will be retrieved. If `eventStartThreshold` is not set at all, events starting from **now** will be retrieved.
 
 If you want to download the actual *.ics file from the given URL:
 1. Open `calendars.json` and find the calendar you want to adjust

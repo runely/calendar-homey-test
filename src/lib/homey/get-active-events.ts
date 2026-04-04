@@ -5,7 +5,7 @@ import nodeICal from "node-ical";
 import { dataInfo, debug, error, info, warn } from "../../config.js";
 
 import type { BusyStatus, CalendarEvent } from "../../types/IcalCalendar.js";
-import type { IcalCalendarEventLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport.js";
+import type { IcalCalendarLimit, IcalCalendarLogProperty } from "../../types/IcalCalendarImport.js";
 
 import { getDateTime, getZonedDateTime, guessTimezone } from "../luxon-fns.js";
 
@@ -162,12 +162,17 @@ const filterOutUnwantedEvents = (
 export const getActiveEvents = (
   timezone: string | undefined,
   data: (CalendarComponent | undefined)[],
-  eventLimit: IcalCalendarEventLimit,
+  eventLimit: IcalCalendarLimit,
   logProperties: IcalCalendarLogProperty[],
-  showLuxonDebugInfo: boolean // same as logAllEvents in calendar-homey
+  showLuxonDebugInfo: boolean, // same as logAllEvents in calendar-homey
+  eventStartThreshold?: IcalCalendarLimit,
 ): CalendarEvent[] => {
   const usedTZ: string = timezone || guessTimezone();
-  const eventLimitStart: DateTime<true> = getZonedDateTime(DateTime.now(), usedTZ).startOf("day");
+  const eventStartThresholdDuration: Duration<true> = eventStartThreshold
+    ? Duration.fromObject({ [eventStartThreshold.type]: eventStartThreshold.value })
+    : Duration.fromObject({ days: 0 });
+
+  const eventLimitStart: DateTime<true> = getZonedDateTime(DateTime.now().minus(eventStartThresholdDuration), usedTZ).startOf("day");
   const eventLimitEnd: DateTime<true> = getZonedDateTime(DateTime.now(), usedTZ)
     .plus(Duration.fromObject({ [eventLimit.type]: eventLimit.value }))
     .endOf("day");
@@ -176,7 +181,7 @@ export const getActiveEvents = (
   let regularEventCount: number = 0;
 
   debug(
-    `getActiveEvents: Using timezone '${usedTZ}' -- Event limit start: '${eventLimitStart.toFormat("dd.MM.yyyy HH:mm:ss")}' -- Event limit end: '${eventLimitEnd.toFormat("dd.MM.yyyy HH:mm:ss")}' -- logPropertiesCount: ${logProperties.length}`
+    `getActiveEvents: Using timezone '${usedTZ}' -- Event start threshold: ${eventStartThresholdDuration.toISO()} -- Event limit start: '${eventLimitStart.toFormat("dd.MM.yyyy HH:mm:ss")}' -- Event limit end: '${eventLimitEnd.toFormat("dd.MM.yyyy HH:mm:ss")}' -- logPropertiesCount: ${logProperties.length}`
   );
 
   const actualEvents: VEvent[] = filterOutUnwantedEvents(data, eventLimitStart, eventLimitEnd);
