@@ -79,13 +79,13 @@ try {
     }
   }
 
-  // get todays events
+  // get today's events
   if (valInArr("eventsToday", args)) {
     const eventsToday: CalendarEventExtended[] = getEventsToday(calendarsEvents, timezone);
     info("\nEvents today:", JSON.stringify(eventsToday, null, 2));
   }
 
-  // get tomorrows events
+  // get tomorrow's events
   if (valInArr("eventsTomorrow", args)) {
     const eventsTomorrow: CalendarEventExtended[] = getEventsTomorrow(calendarsEvents, timezone);
     info("\nEvents tomorrow:", JSON.stringify(eventsTomorrow, null, 2));

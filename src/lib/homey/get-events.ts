@@ -7,9 +7,30 @@ import type { IcalCalendarImport } from "../../types/IcalCalendarImport.js";
 import { downloadIcsFile } from "../debug/download-ics-file.js";
 import { saveIcsFile } from "../debug/save-ics-file.js";
 import { getActiveEvents } from "./get-active-events.js";
+import { getFilteredIcsContent } from "./get-filtered-ics-content.js";
 
 const createDateFilename = (name: string, date: Date): string => {
   return `${name}_${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+};
+
+const getNodeIcalContent = async (
+  filterIcs: boolean,
+  filteredIcsContent: string | null,
+  isLocalFile: boolean,
+  uri: string
+): Promise<CalendarResponse> => {
+  if (filterIcs && filteredIcsContent) {
+    info("getNodeIcalContent: Getting node-ical content from filtered ics content");
+    return await nodeIcal.async.parseICS(filteredIcsContent);
+  }
+
+  if (!isLocalFile) {
+    info("getNodeIcalContent: Getting node-ical content from url");
+    return await nodeIcal.fromURL(uri);
+  }
+
+  info("getNodeIcalContent: Getting node-ical content from local file");
+  return nodeIcal.parseFile(uri);
 };
 
 const printEventsByIndex = (printEventByIndex: number, values: (CalendarComponent | undefined)[]): void => {
@@ -84,21 +105,37 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Cale
 
   info(`getEvents: Getting events (${eventLimit.value} ${eventLimit.type} ahead) for calendar '${name}' (${uri}) (${tz})`);
 
-  try {
-    const d: Date = new Date();
+  const d: Date = new Date();
 
-    if (!isLocalFile && options.downloadIcs) {
-      warn(`Trying to download '${name}' from '${uri}'`);
-      const icsData: string | null = await downloadIcsFile(name, uri);
-      if (icsData !== null) {
-        const icsPath: string = join(import.meta.dirname, `../../../contents/ics/${createDateFilename(name, d)}.ics`);
-        warn(`About to save ics file to path '${icsPath}'`);
-        saveIcsFile(icsData, icsPath);
-        warn("Ics file saved");
-      }
+  if (!isLocalFile && options.downloadIcs) {
+    warn(`Trying to download '${name}' from '${uri}'`);
+    const icsData: string | null = await downloadIcsFile(name, uri);
+    if (icsData !== null) {
+      const icsPath: string = join(import.meta.dirname, `../../../contents/ics/${createDateFilename(name, d)}.ics`);
+      warn(`About to save ics file to path '${icsPath}'`);
+      saveIcsFile(icsData, icsPath);
+      warn("Ics file saved");
     }
+  }
 
-    const data: CalendarResponse = !isLocalFile ? await nodeIcal.fromURL(uri) : nodeIcal.parseFile(uri);
+  const filteredIcsContent: string | null = options.filterIcs
+    ? await getFilteredIcsContent(uri, isLocalFile, eventLimit, options.eventStartThreshold)
+    : null;
+
+  if (options.filterIcs && !filteredIcsContent) {
+    throw new Error("getFilteredIcsContent returned an empty ics string");
+  }
+
+  if (options.filterIcs && filteredIcsContent && options.saveFilteredIcs) {
+    warn(`Trying to save filtered ICS '${name}' from '${uri}'`);
+    const icsPath: string = join(import.meta.dirname, `../../../contents/ics/${createDateFilename(name, d)}_filtered.ics`);
+    warn(`About to save filtered ics file to path '${icsPath}'`);
+    saveIcsFile(filteredIcsContent, icsPath);
+    warn("Filtered ics file saved");
+  }
+
+  try {
+    const data: CalendarResponse = await getNodeIcalContent(options.filterIcs ?? false, filteredIcsContent, isLocalFile, uri);
 
     debug(`nodeIcal(${!isLocalFile ? "URL" : "FILE"}): Success getting data via node-ical`);
 

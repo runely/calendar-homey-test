@@ -65,6 +65,8 @@ export type IcalCalendarImport = {
     eventStartThreshold?: IcalCalendarLimit;
     isLocalFile?: boolean;
     downloadIcs?: boolean;
+    filterIcs?: boolean;
+    saveFilteredIcs?: boolean;
     saveAll?: boolean;
     saveActive?: boolean;
     showMeetingUrls?: boolean;

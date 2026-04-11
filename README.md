@@ -25,34 +25,36 @@ This Node.js app will let you test [IcalCalendar](https://github.com/runely/cale
     2. Insert the following to test the test calendar
         ```json
         {
-            "calendars": [
-                {
-                    "name": "Default",
-                    "uri": "https://raw.githubusercontent.com/runely/calendar-homey-test/master/calendars/default.ics",
-                    "import": true,
-                    "eventLimit": {
-                        "value": 2,
-                        "type": "months"
-                    },
-                    "options": {
-                        "eventStartThreshold": {
-                            "value": 0,
-                            "type": "weeks"
-                        },
-                        "downloadIcs": false,
-                        "isLocalFile": false,
-                        "printAllEvents": false,
-                        "printEventByIndex": -1,
-                        "printEventByUIDs": [],
-                        "saveActive": false,
-                        "saveAll": false,
-                        "showLuxonDebugInfo": true,
-                        "showMeetingUrls": false
-                    },
-                    "logProperties": [],
-                    "tz": "Europe/Oslo"
-                }
-            ]
+          "calendars": [
+            {
+              "name": "Default",
+              "uri": "https://raw.githubusercontent.com/runely/calendar-homey-test/master/calendars/default.ics",
+              "import": true,
+              "eventLimit": {
+                "value": 2,
+                "type": "months"
+              },
+              "options": {
+                "eventStartThreshold": {
+                  "value": 0,
+                  "type": "weeks"
+                },
+                "downloadIcs": false,
+                "filterIcs": true,
+                "saveFilteredIcs": false,
+                "isLocalFile": false,
+                "printAllEvents": false,
+                "printEventByIndex": -1,
+                "printEventByUIDs": [],
+                "saveActive": false,
+                "saveAll": false,
+                "showLuxonDebugInfo": true,
+                "showMeetingUrls": true
+              },
+              "logProperties": [],
+              "tz": "Europe/Oslo"
+            }
+          ]
         }
         ```
     3. Add your own calendars to the list
@@ -94,6 +96,16 @@ If you want to download the actual *.ics file from the given URL:
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Set `downloadIcs` to `true` to save the ics file, otherwise set it to `false`
 3. If set to `true`, the file will be saved to `contents/ics/<name>_<date>.ics`
+
+If you want to filter the actual *.ics file to work on a smaller set of events:
+1. Open `calendars.json` and find the calendar you want to adjust
+2. Set `filterIcs` to `true` to filter the ics file, otherwise set it to `false`
+3. If set to `true`, the file will be filtered to not include past events and to not include events too far into the future (using `eventLimit`)
+
+If you want to download the filtered *.ics file:
+1. Open `calendars.json` and find the calendar you want to adjust
+2. Set `saveFilteredIcs` to `true` to save the filtered ics file, otherwise set it to `false`. Make sure that `filterIcs` is set to `true` as well, otherwise there will be no filtered ics file to save.
+3. If set to `true`, the filtered file will be saved to `contents/ics/<name>_<date>_filtered.ics`
 
 If you want to use a local *.ics file instead of downloading it from the given URL:
 1. Open `calendars.json` and find the calendar you want to adjust
