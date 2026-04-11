@@ -165,7 +165,7 @@ export const getActiveEvents = (
   eventLimit: IcalCalendarLimit,
   logProperties: IcalCalendarLogProperty[],
   showLuxonDebugInfo: boolean, // same as logAllEvents in calendar-homey
-  eventStartThreshold?: IcalCalendarLimit,
+  eventStartThreshold?: IcalCalendarLimit
 ): CalendarEvent[] => {
   const usedTZ: string = timezone || guessTimezone();
   const eventStartThresholdDuration: Duration<true> = eventStartThreshold
