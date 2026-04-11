@@ -20,7 +20,7 @@ export const getFilteredIcsContent = async (
       ? DateTime.now()
           .startOf("day")
           .minus(Duration.fromObject({ [eventStartThreshold.type]: eventStartThreshold.value }))
-      : DateTime.now();
+      : DateTime.now().startOf("day");
 
     const eventLimitEnd: DateTime<true> = DateTime.now()
       .endOf("day")
