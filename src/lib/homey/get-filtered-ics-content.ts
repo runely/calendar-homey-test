@@ -30,7 +30,9 @@ export const getFilteredIcsContent = async (
       `getFilteredIcsContent: Filtering events starting from '${now.toFormat("dd.MM.yyyy HH:mm:ss")}' until '${eventLimitEnd.toFormat("dd.MM.yyyy HH:mm:ss")}'`
     );
     const filteredIcsContent: string = icsFilter(icsContent, now.toJSDate(), eventLimitEnd.toJSDate());
-    info(`getFilteredIcsContent: Filtered ics content length: ${filteredIcsContent.length}`);
+    info(
+      `getFilteredIcsContent: Filtered ics content length: ${filteredIcsContent.length} (${(filteredIcsContent.length / (1024 * 1024)).toFixed(2)} MB)`
+    );
 
     return filteredIcsContent;
   } catch (err) {
