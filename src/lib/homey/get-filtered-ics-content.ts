@@ -14,7 +14,7 @@ export const getFilteredIcsContent = async (
 ): Promise<string | null> => {
   try {
     const icsContent: string = await getIcsContent(url, isLocalFile);
-    info(`getFilteredIcsContent: Raw ics content length: ${icsContent.length}`);
+    info(`getFilteredIcsContent: Raw ics content length: ${icsContent.length} (${(icsContent.length / (1024 * 1024)).toFixed(2)} MB)`);
 
     const now: DateTime<true> = eventStartThreshold
       ? DateTime.now()
