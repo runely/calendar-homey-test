@@ -20,7 +20,7 @@
     "@biomejs/biome": "2.4.16",
     "@types/luxon": "^3.7.1",
     "@types/node": "^25.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.0"
   },
   "scripts": {
     "build": "tsc",
