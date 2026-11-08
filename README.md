@@ -5,91 +5,98 @@
 
 This Node.js app will let you test [IcalCalendar](https://github.com/runely/calendar-homey) behavior:
 
-* Get a list of the events retrieved from your calendar(s)
-* Get the next event happening across all your calendars
-* Get a list of your events happening today
-* Get a list of your events happening tomorrow
+- Get a list of the events retrieved from your calendar(s)
+- Get the next event happening across all your calendars
+- Get a list of your events happening today
+- Get a list of your events happening tomorrow
 
 ## Setup
 
 1. Clone the repo
-    ```bash
-    git clone https://github.com/runely/calendar-homey-test.git
-    ```
+
+   ```bash
+   git clone https://github.com/runely/calendar-homey-test.git
+   ```
 2. Install dependencies
-    ```bash
-    npm i
-    ```
+
+   ```bash
+   npm i
+   ```
 3. Add your calendars
-    1. Create the file `calendars.json`
-    2. Insert the following to test the test calendar
-        ```json
-        {
-          "calendars": [
-            {
-              "name": "Default",
-              "uri": "https://raw.githubusercontent.com/runely/calendar-homey-test/master/calendars/default.ics",
-              "import": true,
-              "eventLimit": {
-                "value": 2,
-                "type": "months"
+   1. Create the file `calendars.json`
+   2. Insert the following to test the test calendar
+
+      ```json
+      {
+        "calendars": [
+          {
+            "name": "Default",
+            "uri": "https://raw.githubusercontent.com/runely/calendar-homey-test/master/calendars/default.ics",
+            "import": true,
+            "eventLimit": {
+              "value": 2,
+              "type": "months"
+            },
+            "options": {
+              "eventStartThreshold": {
+                "value": 0,
+                "type": "weeks"
               },
-              "options": {
-                "eventStartThreshold": {
-                  "value": 0,
-                  "type": "weeks"
-                },
-                "downloadIcs": false,
-                "filterIcs": true,
-                "saveFilteredIcs": false,
-                "isLocalFile": false,
-                "printAllEvents": false,
-                "printEventByIndex": -1,
-                "printEventByUIDs": [],
-                "saveActive": false,
-                "saveAll": false,
-                "showLuxonDebugInfo": true,
-                "showMeetingUrls": true
-              },
-              "logProperties": [],
-              "tz": "Europe/Oslo"
-            }
-          ]
-        }
-        ```
-    3. Add your own calendars to the list
-        1. If you want to test a local ics file, swap out the uri with full path to the ics file and set `"isLocalFile"` to `true` in `"options"`
+              "downloadIcs": false,
+              "filterIcs": true,
+              "saveFilteredIcs": false,
+              "isLocalFile": false,
+              "printAllEvents": false,
+              "printEventByIndex": -1,
+              "printEventByUIDs": [],
+              "saveActive": false,
+              "saveAll": false,
+              "showLuxonDebugInfo": true,
+              "showMeetingUrls": true
+            },
+            "logProperties": [],
+            "tz": "Europe/Oslo"
+          }
+        ]
+      }
+      ```
+   3. Add your own calendars to the list
+      1. If you want to test a local ics file, swap out the uri with full path to the ics file and set `"isLocalFile"` to `true` in `"options"`
 
 ## Usage
 
-* Get a list of the events retrieved from your calendar(s)
-    ```bash
-    npm run calendars
-    ```
-* Get the next event happening across all your calendars as well
-    ```bash
-    npm run calendars-and-next-event
-    ```
-* Get a list of your events happening today as well
-    ```bash
-    npm run calendars-and-todays-events
-    ```
-* Get a list of your events happening tomorrow as well
-    ```bash
-    npm run calendars-and-tomorrows-events
-    ```
+- Get a list of the events retrieved from your calendar(s)
+
+  ```bash
+  npm run calendars
+  ```
+- Get the next event happening across all your calendars as well
+
+  ```bash
+  npm run calendars-and-next-event
+  ```
+- Get a list of your events happening today as well
+
+  ```bash
+  npm run calendars-and-todays-events
+  ```
+- Get a list of your events happening tomorrow as well
+
+  ```bash
+  npm run calendars-and-tomorrows-events
+  ```
 
 ## Configuration
 
 To change how far into the future you want to retrieve events:
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `value` to any number and `type` to one of the predefined types:
-    1. "year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second" | "millisecond"
+   1. "year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second" | "millisecond"
 
 To change how far back in the past events are retrieved from:
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Add `eventStartThreshold` as shown above in to the `options` object and change `value` to any number and `type` to one of the predefined types:
-    1. "year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second" | "millisecond"
+   1. "year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second" | "millisecond"
 3. If set to `0` and any of the predefined types, events from **now** will be retrieved. If set to anything higher than `0`, events starting from that point in the past will be retrieved. If `eventStartThreshold` is not set at all, events starting from **now** will be retrieved.
 
 If you want to download the actual *.ics file from the given URL:
@@ -146,58 +153,58 @@ Add properties you want printed to console per event per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Add `event` to the `logProperties` array for console logging out the whole event
 
-Change *timezone* per calendar:
+Change _timezone_ per calendar:
 1. Open `calendars.json` and find the calendar you want to adjust
-2. Add or change the property `tz` and set the *timezone* you want for that calendar
+2. Add or change the property `tz` and set the _timezone_ you want for that calendar
 
-    AND/OR
+   AND/OR
 
 3. Add one or more of these event property names to the `logProperties` array
-    - `type`
-    - `method`
-    - `dtstamp`
-    - `uid`
-    - `sequence`
-    - `transparency`
-    - `class`
-    - `summary`
-    - `start`
-    - `datetype`
-    - `end`
-    - `location`
-    - `description`
-    - `url`
-    - `completion`
-    - `created`
-    - `lastmodified`
-    - `rrule`
-    - `attendee`
-    - `recurrences`
-    - `status`
-    - `organizer`
-    - `exdate`
-    - `geo`
-    - `recurrenceid`
-    - `alarms`
-    - `params`
-    - `MICROSOFT-CDO-APPT-SEQUENCE`
-    - `MICROSOFT-CDO-BUSYSTATUS`
-    - `MICROSOFT-CDO-INTENDEDSTATUS`
-    - `MICROSOFT-CDO-ALLDAYEVENT`
-    - `MICROSOFT-CDO-IMPORTANCE`
-    - `MICROSOFT-CDO-INSTTYPE`
-    - `MICROSOFT-DONOTFORWARDMEETING`
-    - `MICROSOFT-DISALLOW-COUNTER`
-    - `MICROSOFT-CDO-OWNERAPPTID`
-    - `MICROSOFT-EVENTPROPERTIESTODELETE`
-    - `MICROSOFT-ONLINEMEETINGCONFLINK`
-    - `MICROSOFT-ONLINEMEETINGINFORMATION`
-    - `MICROSOFT-SCHEDULINGSERVICEUPDATEURL`
-    - `MICROSOFT-SKYPETEAMSMEETINGURL`
-    - `MICROSOFT-SKYPETEAMSPROPERTIES`
-    - `MICROSOFT-LOCATIONS`
-    - `MS-OLK-AUTOFILLLOCATION`
-    - `MS-OLK-CONFTYPE`
-    - `APPLE-STRUCTURED-LOCATION`
-    - `APPLE-TRAVEL-ADVISORY-BEHAVIOR`
-    - `APPLE-TRAVEL-START`
+   - `type`
+   - `method`
+   - `dtstamp`
+   - `uid`
+   - `sequence`
+   - `transparency`
+   - `class`
+   - `summary`
+   - `start`
+   - `datetype`
+   - `end`
+   - `location`
+   - `description`
+   - `url`
+   - `completion`
+   - `created`
+   - `lastmodified`
+   - `rrule`
+   - `attendee`
+   - `recurrences`
+   - `status`
+   - `organizer`
+   - `exdate`
+   - `geo`
+   - `recurrenceid`
+   - `alarms`
+   - `params`
+   - `MICROSOFT-CDO-APPT-SEQUENCE`
+   - `MICROSOFT-CDO-BUSYSTATUS`
+   - `MICROSOFT-CDO-INTENDEDSTATUS`
+   - `MICROSOFT-CDO-ALLDAYEVENT`
+   - `MICROSOFT-CDO-IMPORTANCE`
+   - `MICROSOFT-CDO-INSTTYPE`
+   - `MICROSOFT-DONOTFORWARDMEETING`
+   - `MICROSOFT-DISALLOW-COUNTER`
+   - `MICROSOFT-CDO-OWNERAPPTID`
+   - `MICROSOFT-EVENTPROPERTIESTODELETE`
+   - `MICROSOFT-ONLINEMEETINGCONFLINK`
+   - `MICROSOFT-ONLINEMEETINGINFORMATION`
+   - `MICROSOFT-SCHEDULINGSERVICEUPDATEURL`
+   - `MICROSOFT-SKYPETEAMSMEETINGURL`
+   - `MICROSOFT-SKYPETEAMSPROPERTIES`
+   - `MICROSOFT-LOCATIONS`
+   - `MS-OLK-AUTOFILLLOCATION`
+   - `MS-OLK-CONFTYPE`
+   - `APPLE-STRUCTURED-LOCATION`
+   - `APPLE-TRAVEL-ADVISORY-BEHAVIOR`
+   - `APPLE-TRAVEL-START`
