@@ -14,10 +14,10 @@
     "chalk": "^6.0.1",
     "ics-filter": "^1.0.6",
     "luxon": "^3.7.2",
-    "node-ical": "^0.27.3"
+    "node-ical": "^0.27.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.6",
     "@types/luxon": "^3.7.6",
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2"

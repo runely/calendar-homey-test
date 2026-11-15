@@ -89,71 +89,86 @@ This Node.js app will let you test [IcalCalendar](https://github.com/runely/cale
 ## Configuration
 
 To change how far into the future you want to retrieve events:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `value` to any number and `type` to one of the predefined types:
    1. "year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second" | "millisecond"
 
 To change how far back in the past events are retrieved from:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Add `eventStartThreshold` as shown above in to the `options` object and change `value` to any number and `type` to one of the predefined types:
    1. "year" | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second" | "millisecond"
 3. If set to `0` and any of the predefined types, events from **now** will be retrieved. If set to anything higher than `0`, events starting from that point in the past will be retrieved. If `eventStartThreshold` is not set at all, events starting from **now** will be retrieved.
 
 If you want to download the actual *.ics file from the given URL:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Set `downloadIcs` to `true` to save the ics file, otherwise set it to `false`
 3. If set to `true`, the file will be saved to `contents/ics/<name>_<date>.ics`
 
 If you want to filter the actual *.ics file to work on a smaller set of events:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Set `filterIcs` to `true` to filter the ics file, otherwise set it to `false`
 3. If set to `true`, the file will be filtered to not include past events and to not include events too far into the future (using `eventLimit`)
 
 If you want to download the filtered *.ics file:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Set `saveFilteredIcs` to `true` to save the filtered ics file, otherwise set it to `false`. Make sure that `filterIcs` is set to `true` as well, otherwise there will be no filtered ics file to save.
 3. If set to `true`, the filtered file will be saved to `contents/ics/<name>_<date>_filtered.ics`
 
 If you want to use a local *.ics file instead of downloading it from the given URL:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `isLocalFile` from **false** to **true**
 3. Make sure the `uri` property points to the full path of the local *.ics file you want to use
 
 Print all events to console:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `printAllEvents` from **false** to **true**
 
 Print event by index to console:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `printEventByIndex` from **-1** to **0 or higher**
 
 Print event by UIDs to console:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `printEventByUIDs` from **[]** to **["UID-of-event-1","UID-of-event-2"]**
 
 If you want to save active events retrieved/parsed through [node-ical](https://github.com/jens-maus/node-ical):
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Set `saveActive` to `true` to save the file, otherwise set it to `false`
 3. If set to `true`, the file will be saved to `contents/active/<name>_<date>.json`
 
 If you want to save all events retrieved/parsed through [node-ical](https://github.com/jens-maus/node-ical):
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Set `saveAll` to `true` to save the file, otherwise set it to `false`
 3. If set to `true`, the file will be saved to `contents/raw/<name>_<date>.json`
 
 Show luxon debug info:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `showLuxonDebugInfo` from **false** to **true**
 
 Show meeting URLs:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `showMeetingUrls` from **false** to **true**
 
 Add properties you want printed to console per event per calendar:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Add `event` to the `logProperties` array for console logging out the whole event
 
 Change _timezone_ per calendar:
+
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Add or change the property `tz` and set the _timezone_ you want for that calendar
 
