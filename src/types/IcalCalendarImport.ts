@@ -66,6 +66,7 @@ export type IcalCalendarImport = {
     isLocalFile?: boolean;
     downloadIcs?: boolean;
     filterIcs?: boolean;
+    includeEventsWhereDescriptionHas?: string;
     saveFilteredIcs?: boolean;
     saveAll?: boolean;
     saveActive?: boolean;

@@ -13,6 +13,28 @@ const createDateFilename = (name: string, date: Date): string => {
   return `${name}_${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
 };
 
+const getAllValuesOrIncludedOnly = (values: (CalendarComponent | undefined)[], includeEventsWhereDescriptionHas?: string): (CalendarComponent | undefined)[] => {
+  if (typeof includeEventsWhereDescriptionHas !== "string" || includeEventsWhereDescriptionHas.length === 0) {
+    return values;
+  }
+
+  return values.filter((value: CalendarComponent | undefined) => {
+    if (value === undefined || value.type !== "VEVENT") {
+      return true;
+    }
+
+    if (value.description === undefined) {
+      return false;
+    }
+
+    if (typeof value.description === "string") {
+      return value.description.includes(includeEventsWhereDescriptionHas);
+    }
+
+    return value.description.val.includes(includeEventsWhereDescriptionHas);
+  });
+};
+
 const getNodeIcalContent = async (
   filterIcs: boolean,
   filteredIcsContent: string | null,
@@ -164,9 +186,11 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Cale
       printEventsByUids(data, values, options.printEventByUIDs);
     }
 
+    const allValuesOrIncludedOnly: (CalendarComponent | undefined)[] = getAllValuesOrIncludedOnly(values, options.includeEventsWhereDescriptionHas);
+
     const activeEvents: CalendarEvent[] = getActiveEvents(
       tz,
-      values,
+      allValuesOrIncludedOnly,
       eventLimit,
       logProperties,
       options.showLuxonDebugInfo || false,

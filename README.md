@@ -46,6 +46,7 @@ This Node.js app will let you test [IcalCalendar](https://github.com/runely/cale
               "filterIcs": true,
               "saveFilteredIcs": false,
               "isLocalFile": false,
+              "includeEventsWhereDescriptionHas": "",
               "printAllEvents": false,
               "printEventByIndex": -1,
               "printEventByUIDs": [],
@@ -124,6 +125,14 @@ If you want to use a local *.ics file instead of downloading it from the given U
 1. Open `calendars.json` and find the calendar you want to adjust
 2. Change `isLocalFile` from **false** to **true**
 3. Make sure the `uri` property points to the full path of the local *.ics file you want to use
+
+You can choose to import only events that have a certain word or phrase in the `description` field of the event:
+
+1. Open `calendars.json` and find the calendar you want to adjust
+2. Add the word or phrase (the match is case-sensitive) to the `includeEventsWhereDescriptionHas` property
+3. Keep in mind:
+   1. If `includeEventsWhereDescriptionHas` is not present or set to an empty string, all events WILL be included
+   2. If the `description` field is not present, the event will NOT be included
 
 Print all events to console:
 
