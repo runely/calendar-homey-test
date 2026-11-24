@@ -19,7 +19,7 @@ const scriptStart: number = Date.now();
 const calendars: IcalCalendarImport[] = await getCalendars();
 
 if (calendars.length === 0) {
-  info("getEvents: Add at least one calendar in calendar.json");
+  warn("getEvents: Add at least one calendar in calendar.json that has \"import\": true");
   process.exit(1);
 }
 info(`fromFile: Getting ${calendars.length} calendars\n`);

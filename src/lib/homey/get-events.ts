@@ -100,7 +100,7 @@ export const getEvents = async (calendarsItem: IcalCalendarImport): Promise<Cale
 
   if (uri.indexOf("webcal://") === 0) {
     uri = uri.replace("webcal://", "https://");
-    info(`getEvents: Calendar '${name}': webcal found and replaced with https://`);
+    warn(`getEvents: Calendar '${name}': webcal found and replaced with https://`);
   }
 
   info(`getEvents: Getting events (${eventLimit.value} ${eventLimit.type} ahead) for calendar '${name}' (${uri}) (${tz})`);
